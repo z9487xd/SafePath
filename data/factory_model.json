@@ -1,0 +1,97 @@
+{
+  "nodes": [
+    {
+      "id": "N1",
+      "x": 100,
+      "y": 300,
+      "type": "corridor",
+      "name": "West Hallway"
+    },
+    {
+      "id": "N2",
+      "x": 250,
+      "y": 300,
+      "type": "junction",
+      "name": "Central Crossing"
+    },
+    {
+      "id": "N3",
+      "x": 400,
+      "y": 300,
+      "type": "hazard_zone",
+      "name": "Chemical Storage"
+    },
+    {
+      "id": "N4",
+      "x": 250,
+      "y": 150,
+      "type": "corridor",
+      "name": "North Corridor"
+    },
+    {
+      "id": "N5",
+      "x": 400,
+      "y": 150,
+      "type": "corridor",
+      "name": "East Corridor"
+    },
+    {
+      "id": "EX1",
+      "x": 50,
+      "y": 300,
+      "type": "exit",
+      "name": "Main Gate A"
+    },
+    {
+      "id": "EX2",
+      "x": 250,
+      "y": 50,
+      "type": "exit",
+      "name": "Emergency Exit B"
+    }
+  ],
+  "edges": [
+    {
+      "source": "N1",
+      "target": "EX1",
+      "base_distance": 2.5,
+      "current_cost": 2.5
+    },
+    {
+      "source": "N1",
+      "target": "N2",
+      "base_distance": 5.0,
+      "current_cost": 5.0
+    },
+    {
+      "source": "N2",
+      "target": "N3",
+      "base_distance": 6.0,
+      "current_cost": 6.0
+    },
+    {
+      "source": "N2",
+      "target": "N4",
+      "base_distance": 4.5,
+      "current_cost": 4.5
+    },
+    {
+      "source": "N3",
+      "target": "N5",
+      "base_distance": 4.0,
+      "current_cost": 4.0
+    },
+    {
+      "source": "N4",
+      "target": "N5",
+      "base_distance": 5.5,
+      "current_cost": 5.5
+    },
+    {
+      "source": "N4",
+      "target": "EX2",
+      "base_distance": 3.0,
+      "current_cost": 3.0
+    }
+  ]
+}

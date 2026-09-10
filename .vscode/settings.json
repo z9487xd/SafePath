@@ -1,0 +1,4 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "python.defaultInterpreterPath": "${env:HOME}/.platformio/penv/bin/python"
+}

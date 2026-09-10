@@ -1,0 +1,24 @@
+[
+  {
+    "rule_id": "MOL-OSHA-CS-12",
+    "hazard_type": "SMOKE_FIRE",
+    "trigger_threshold": { "smoke": 2000, "temp": 50.0 },
+    "title": "Confined Space Hazard Prevention Directive Art. 12",
+    "checklist": [
+      "Activate explosion-proof mechanical ventilation (5+ air changes/hr).",
+      "Cut off upstream flammable gas pipeline valves.",
+      "Evacuate non-emergency personnel along dynamic floor lighting.",
+      "Mandate positive-pressure SCBA for standby rescue team."
+    ]
+  },
+  {
+    "rule_id": "MOL-OSHA-HEAT-05",
+    "hazard_type": "THERMAL_OVERLOAD",
+    "trigger_threshold": { "smoke": 0, "temp": 42.0 },
+    "title": "High Temperature Workplace Protection Standard Art. 5",
+    "checklist": [
+      "Mandate immediate 15-minute rest cycle per hour.",
+      "Deploy localized industrial misting fans."
+    ]
+  }
+]

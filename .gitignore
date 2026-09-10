@@ -36,3 +36,4 @@ Thumbs.db
 
 # VS Code (keep configuration files, ignore local state)
 .vscode/*.log
+.vscode/

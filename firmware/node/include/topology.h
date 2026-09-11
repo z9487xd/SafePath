@@ -16,17 +16,11 @@
 
 const uint8_t EXIT_NODES[NUM_EXITS] = { 0, 5 };
 
-// Board identity: matched against the node's own MAC at boot.
-const uint8_t NODE_MACS[NUM_NODES][6] = {
-    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },  // EX1
-    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },  // N1
-    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },  // N2
-    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },  // N3
-    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },  // N4
-    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },  // EX2
-};
-
-const bool NODE_MAC_VALID[NUM_NODES] = { false, false, false, false, false, false };
+// Address jumpers. Tie these pins to GND on each board:
+//   N1 = 1  ->  ADDR0
+//   N2 = 2  ->  ADDR1
+//   N3 = 3  ->  ADDR0 + ADDR1
+//   N4 = 4  ->  ADDR2
 
 // Corridor lengths in map units. INF means no corridor.
 const float BASE_GRAPH[NUM_NODES][NUM_NODES] = {

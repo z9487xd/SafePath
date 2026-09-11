@@ -5,8 +5,9 @@
 // The LED strip shows that direction. No server is involved, so the mesh keeps
 // working with mains power and internet down.
 //
-// Every board runs this same binary. Which node a board is comes from matching
-// its MAC against NODE_MACS in topology.h.
+// Every board runs this same binary. A board learns which node it is from the
+// address jumpers wired to its ADDR pins, so nothing has to be configured in
+// software per board.
 
 #include <Arduino.h>
 #include <FastLED.h>
@@ -21,6 +22,14 @@
 #define NUM_LEDS 16
 #define SMOKE_SENSOR_PIN 34
 #define DHT_PIN 27
+
+// Address jumpers. Tie a pin to GND to set that bit; the resulting number is
+// the node index from topology.h, which also lists which pins each node needs.
+// No jumper at all reads 0, which is an exit position, so an unset board is
+// caught rather than silently pretending to be somewhere.
+#define ADDR0_PIN 32
+#define ADDR1_PIN 33
+#define ADDR2_PIN 25
 
 // DHT22 refuses to be read faster than every 2s.
 #define DHT_INTERVAL_MS 2200
@@ -82,19 +91,35 @@ void formatMac(const uint8_t *mac, char *out, size_t outSize) {
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
-int resolveLocalNodeId(const uint8_t *mac) {
+bool isExitNode(int node) {
+    for (int i = 0; i < NUM_EXITS; i++) {
+        if (EXIT_NODES[i] == node) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int readAddressJumpers() {
+    pinMode(ADDR0_PIN, INPUT_PULLUP);
+    pinMode(ADDR1_PIN, INPUT_PULLUP);
+    pinMode(ADDR2_PIN, INPUT_PULLUP);
+    delay(5);
+
+    return (digitalRead(ADDR0_PIN) == LOW ? 1 : 0)
+         | (digitalRead(ADDR1_PIN) == LOW ? 2 : 0)
+         | (digitalRead(ADDR2_PIN) == LOW ? 4 : 0);
+}
+
+int resolveLocalNodeId() {
 #ifdef FORCE_NODE_ID
     return FORCE_NODE_ID;
 #else
-    for (int i = 0; i < NUM_NODES; i++) {
-        if (!NODE_MAC_VALID[i]) {
-            continue;
-        }
-        if (memcmp(NODE_MACS[i], mac, 6) == 0) {
-            return i;
-        }
+    int id = readAddressJumpers();
+    if (id >= NUM_NODES || isExitNode(id)) {
+        return -1;
     }
-    return -1;
+    return id;
 #endif
 }
 
@@ -106,8 +131,9 @@ void showStandby(CRGB colour, const char *key) {
         lastIdentityNotice = millis();
         char macText[18];
         formatMac(localMac, macText, sizeof(macText));
-        char outMsg[64];
-        snprintf(outMsg, sizeof(outMsg), "{\"%s\":\"%s\"}", key, macText);
+        char outMsg[80];
+        snprintf(outMsg, sizeof(outMsg), "{\"%s\":%d,\"mac\":\"%s\"}",
+                 key, readAddressJumpers(), macText);
         Serial.println(outMsg);
     }
 
@@ -217,15 +243,6 @@ uint16_t readSensorSmoke() {
         delayMicroseconds(50);
     }
     return (uint16_t)(accumulator / 16);
-}
-
-bool isExitNode(int node) {
-    for (int i = 0; i < NUM_EXITS; i++) {
-        if (EXIT_NODES[i] == node) {
-            return true;
-        }
-    }
-    return false;
 }
 
 // Maps one reading onto the three bands described above.
@@ -390,7 +407,7 @@ void setup() {
     WiFi.disconnect();
     WiFi.macAddress(localMac);
 
-    localNodeId = resolveLocalNodeId(localMac);
+    localNodeId = resolveLocalNodeId();
     if (localNodeId < 0) {
         return;
     }
@@ -487,8 +504,9 @@ void runNode() {
 
 void loop() {
     if (localNodeId < 0) {
-        // MAC not in NODE_MACS. The printed address is what goes into place.py.
-        showStandby(CRGB::Blue, "unprovisioned_mac");
+        // Address jumpers unset, or set to an exit position. topology.h lists
+        // which pins this board should have tied to GND.
+        showStandby(CRGB::Blue, "bad_address");
     } else if (!meshReady) {
         // Radio or queue failed to start. Routing would be meaningless here.
         showStandby(CRGB::Magenta, "mesh_init_failed");

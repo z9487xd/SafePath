@@ -14,19 +14,15 @@ import json
 import math
 
 # Dictionary order defines the node numbering used by the firmware (ID_EX1 = 0,
-# ID_N1 = 1, ...), so reordering these lines renumbers every board.
-#
-# mac is the WiFi STA MAC of the board physically placed at that position. Each
-# board matches its own MAC at boot to learn which node it is, which is why all
-# boards can run one identical binary. Leave it None until you know the MAC: an
-# unregistered board prints its own over serial and stays out of the mesh.
+# ID_N1 = 1, ...), so reordering these lines renumbers every board and changes
+# which address jumpers each board needs.
 nodes_data = {
-    "EX1": {"x": 300, "y": 300, "type": "exit", "mac": None},
-    "N1":  {"x": 260, "y": 500, "type": "node", "mac": None},
-    "N2":  {"x": 200, "y": 300, "type": "node", "mac": None},
-    "N3":  {"x": 130, "y": 160, "type": "node", "mac": None},
-    "N4":  {"x": 260, "y": 200, "type": "node", "mac": None},
-    "EX2": {"x": 100, "y": 100, "type": "exit", "mac": None}
+    "EX1": {"x": 300, "y": 300, "type": "exit"},
+    "N1":  {"x": 260, "y": 500, "type": "node"},
+    "N2":  {"x": 200, "y": 300, "type": "node"},
+    "N3":  {"x": 130, "y": 160, "type": "node"},
+    "N4":  {"x": 260, "y": 200, "type": "node"},
+    "EX2": {"x": 100, "y": 100, "type": "exit"}
 }
 
 
@@ -41,15 +37,6 @@ raw_edges = [
     ("N4",  "N2"),
     ("N4",  "N1")
 ]
-
-# "AA:BB:CC:DD:EE:FF" or "AA-BB-..." into six bytes for the C header.
-def parse_mac(text):
-    if not text:
-        return None
-    parts = text.replace("-", ":").split(":")
-    if len(parts) != 6:
-        raise ValueError(f"MAC 格式錯誤: {text}")
-    return [int(p, 16) for p in parts]
 
 def calculate_edge_weight(p1, p2, positions):
     x1, y1 = positions[p1]["x"], positions[p1]["y"]
@@ -125,17 +112,14 @@ def generate_topology():
     header_lines.append(f"const uint8_t EXIT_NODES[NUM_EXITS] = {{ {', '.join(map(str, exit_indices))} }};")
     header_lines.append("")
 
-    header_lines.append("// Board identity: matched against the node's own MAC at boot.")
-    header_lines.append("const uint8_t NODE_MACS[NUM_NODES][6] = {")
-    for k in node_keys:
-        mac = parse_mac(nodes_data[k].get("mac"))
-        cells = mac if mac else [0, 0, 0, 0, 0, 0]
-        header_lines.append("    { " + ", ".join(f"0x{b:02X}" for b in cells) + f" }},  // {k}")
-    header_lines.append("};")
-    header_lines.append("")
-
-    valid_flags = ["true" if parse_mac(nodes_data[k].get("mac")) else "false" for k in node_keys]
-    header_lines.append(f"const bool NODE_MAC_VALID[NUM_NODES] = {{ {', '.join(valid_flags)} }};")
+    # Each board reads its own index off three address pins, so the wiring
+    # table belongs next to the numbering it comes from.
+    header_lines.append("// Address jumpers. Tie these pins to GND on each board:")
+    for k, idx in node_to_idx.items():
+        if nodes_data[k]["type"] == "exit":
+            continue
+        bits = [f"ADDR{b}" for b in range(3) if idx >> b & 1]
+        header_lines.append(f"//   {k} = {idx}  ->  " + (" + ".join(bits) if bits else "none"))
     header_lines.append("")
 
     header_lines.append("// Corridor lengths in map units. INF means no corridor.")

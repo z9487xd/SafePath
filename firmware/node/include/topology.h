@@ -16,11 +16,15 @@
 
 const uint8_t EXIT_NODES[NUM_EXITS] = { 0, 5 };
 
-// Address jumpers. Tie these pins to GND on each board:
-//   N1 = 1  ->  ADDR0
-//   N2 = 2  ->  ADDR1
-//   N3 = 3  ->  ADDR0 + ADDR1
-//   N4 = 4  ->  ADDR2
+#define ADDR_PIN_COUNT 3
+const uint8_t ADDR_PINS[ADDR_PIN_COUNT] = { 32, 33, 25 };
+
+// Node number in binary, 3 pins address up to 7 nodes.
+// Tie these pins to GND on each board:
+//   N1 = 1  ->  GPIO32
+//   N2 = 2  ->  GPIO33
+//   N3 = 3  ->  GPIO32 + GPIO33
+//   N4 = 4  ->  GPIO25
 
 // Corridor lengths in map units. INF means no corridor.
 const float BASE_GRAPH[NUM_NODES][NUM_NODES] = {

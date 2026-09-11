@@ -26,6 +26,11 @@ nodes_data = {
 }
 
 
+# Free GPIOs used to encode the node number in binary. Avoids the LED, sensor
+# and boot-strapping pins. N pins address 2^N - 1 nodes, so this list supports
+# far more nodes than it has entries.
+ADDR_PIN_POOL = [32, 33, 25, 26, 14, 13, 4]
+
 raw_edges = [
     ("EX1", "N4"),
     ("EX1", "N3"),
@@ -112,14 +117,26 @@ def generate_topology():
     header_lines.append(f"const uint8_t EXIT_NODES[NUM_EXITS] = {{ {', '.join(map(str, exit_indices))} }};")
     header_lines.append("")
 
-    # Each board reads its own index off three address pins, so the wiring
-    # table belongs next to the numbering it comes from.
-    header_lines.append("// Address jumpers. Tie these pins to GND on each board:")
+    # Each board reads its own index as a binary number off the address pins,
+    # so the wiring table belongs next to the numbering it comes from.
+    addr_bits = max(1, (num_nodes - 1).bit_length())
+    if addr_bits > len(ADDR_PIN_POOL):
+        raise ValueError(f"{num_nodes} nodes need {addr_bits} address pins, "
+                         f"pool only has {len(ADDR_PIN_POOL)}")
+    addr_pins = ADDR_PIN_POOL[:addr_bits]
+
+    header_lines.append(f"#define ADDR_PIN_COUNT {addr_bits}")
+    header_lines.append(f"const uint8_t ADDR_PINS[ADDR_PIN_COUNT] = {{ "
+                        + ", ".join(str(p) for p in addr_pins) + " };")
+    header_lines.append("")
+    header_lines.append(f"// Node number in binary, {addr_bits} pins address up to "
+                        f"{2 ** addr_bits - 1} nodes.")
+    header_lines.append("// Tie these pins to GND on each board:")
     for k, idx in node_to_idx.items():
         if nodes_data[k]["type"] == "exit":
             continue
-        bits = [f"ADDR{b}" for b in range(3) if idx >> b & 1]
-        header_lines.append(f"//   {k} = {idx}  ->  " + (" + ".join(bits) if bits else "none"))
+        wires = [f"GPIO{addr_pins[b]}" for b in range(addr_bits) if idx >> b & 1]
+        header_lines.append(f"//   {k} = {idx}  ->  " + " + ".join(wires))
     header_lines.append("")
 
     header_lines.append("// Corridor lengths in map units. INF means no corridor.")

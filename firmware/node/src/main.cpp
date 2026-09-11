@@ -5,9 +5,9 @@
 // The LED strip shows that direction. No server is involved, so the mesh keeps
 // working with mains power and internet down.
 //
-// Every board runs this same binary. A board learns which node it is from the
-// address jumpers wired to its ADDR pins, so nothing has to be configured in
-// software per board.
+// Every board runs this same binary. A board learns which node it is by reading
+// its address pins, so nothing is configured per board in software.
+// topology.h lists which pins each node needs tied to GND.
 
 #include <Arduino.h>
 #include <FastLED.h>
@@ -23,13 +23,6 @@
 #define SMOKE_SENSOR_PIN 34
 #define DHT_PIN 27
 
-// Address jumpers. Tie a pin to GND to set that bit; the resulting number is
-// the node index from topology.h, which also lists which pins each node needs.
-// No jumper at all reads 0, which is an exit position, so an unset board is
-// caught rather than silently pretending to be somewhere.
-#define ADDR0_PIN 32
-#define ADDR1_PIN 33
-#define ADDR2_PIN 25
 
 // DHT22 refuses to be read faster than every 2s.
 #define DHT_INTERVAL_MS 2200
@@ -100,22 +93,29 @@ bool isExitNode(int node) {
     return false;
 }
 
-int readAddressJumpers() {
-    pinMode(ADDR0_PIN, INPUT_PULLUP);
-    pinMode(ADDR1_PIN, INPUT_PULLUP);
-    pinMode(ADDR2_PIN, INPUT_PULLUP);
-    delay(5);
-
-    return (digitalRead(ADDR0_PIN) == LOW ? 1 : 0)
-         | (digitalRead(ADDR1_PIN) == LOW ? 2 : 0)
-         | (digitalRead(ADDR2_PIN) == LOW ? 4 : 0);
-}
-
+// The node number written in binary across the address pins listed in
+// topology.h, grounded pin = 1. N pins cover 2^N - 1 nodes, so growing the site
+// costs one more wire rather than a redesign.
+//
+// An unwired board reads 0, and an out-of-range or exit value cannot be a board
+// position either. All of those refuse to run rather than guess, because the
+// wrong number makes every arrow point the wrong way while looking normal.
 int resolveLocalNodeId() {
 #ifdef FORCE_NODE_ID
     return FORCE_NODE_ID;
 #else
-    int id = readAddressJumpers();
+    for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
+        pinMode(ADDR_PINS[bit], INPUT_PULLUP);
+    }
+    delay(5);
+
+    int id = 0;
+    for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
+        if (digitalRead(ADDR_PINS[bit]) == LOW) {
+            id |= (1 << bit);
+        }
+    }
+
     if (id >= NUM_NODES || isExitNode(id)) {
         return -1;
     }
@@ -131,9 +131,8 @@ void showStandby(CRGB colour, const char *key) {
         lastIdentityNotice = millis();
         char macText[18];
         formatMac(localMac, macText, sizeof(macText));
-        char outMsg[80];
-        snprintf(outMsg, sizeof(outMsg), "{\"%s\":%d,\"mac\":\"%s\"}",
-                 key, readAddressJumpers(), macText);
+        char outMsg[64];
+        snprintf(outMsg, sizeof(outMsg), "{\"%s\":\"%s\"}", key, macText);
         Serial.println(outMsg);
     }
 
@@ -504,8 +503,8 @@ void runNode() {
 
 void loop() {
     if (localNodeId < 0) {
-        // Address jumpers unset, or set to an exit position. topology.h lists
-        // which pins this board should have tied to GND.
+        // Address pins unset or set to a value no board can have. topology.h
+        // lists which pins this board should have tied to GND.
         showStandby(CRGB::Blue, "bad_address");
     } else if (!meshReady) {
         // Radio or queue failed to start. Routing would be meaningless here.

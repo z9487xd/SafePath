@@ -4,9 +4,10 @@ The simulation has to exercise the real algorithm, otherwise the dashboard
 shows something the firmware would never do. So this module ports the node
 firmware's cost model line for line:
 
-    hazardFactor(v) = INF                          smoke >= 2000
-                    = 1.0                          smoke <= 800
-                    = 1.0 + 2.0 * (smoke-800)/1200 in between
+    bandFactor(x)   = INF                       x >= block
+                    = 1.0                       x <= clean
+                    = 1.0 + 2.0 * (x-clean)/(block-clean)
+    hazardFactor(v) = max(bandFactor(smoke), bandFactor(temp))
     edgeCost(u, v)  = BASE_GRAPH[u][v] * hazardFactor(v)
 
 It replaces the serial port and nothing above it: the lines it emits are
@@ -21,6 +22,8 @@ from typing import Dict, List
 INF = 99999.0
 SMOKE_CLEAN = 800
 SMOKE_THRESHOLD = 2000
+TEMP_CLEAN = 40.0
+TEMP_BLOCK = 60.0
 HAZARD_GAIN = 2.0
 
 NEXT_HOP_SAFE = -2
@@ -33,6 +36,10 @@ HAZARD_NODE = "N4"
 CYCLE_SECONDS = 40
 BASELINE_SMOKE = 220
 PEAK_SMOKE = 2600
+BASELINE_TEMP = 24.0
+PEAK_TEMP = 58.0
+BASELINE_HUMIDITY = 55
+PEAK_HUMIDITY = 20
 
 # Where the gateway sits. Used only to fake a plausible relay depth for the
 # `hops` field; delete this and _relay_depth() if you want a leaner mock.
@@ -67,6 +74,8 @@ class VirtualMesh:
 
         self.hops = self._relay_depth()
         self.smoke: Dict[str, int] = {nid: 0 for nid in self.ids}
+        self.temp: Dict[str, float] = {nid: BASELINE_TEMP for nid in self.ids}
+        self.humidity: Dict[str, int] = {nid: BASELINE_HUMIDITY for nid in self.ids}
         self.seq = 0
 
     # Hop count = graph distance from the gateway, minus the first direct hop.
@@ -81,14 +90,18 @@ class VirtualMesh:
                     queue.append(neighbor)
         return {nid: max(0, depth.get(nid, 1) - 1) for nid in self.ids}
 
+    @staticmethod
+    def _band(value: float, clean: float, block: float) -> float:
+        if value >= block:
+            return INF
+        if value <= clean:
+            return 1.0
+        return 1.0 + HAZARD_GAIN * (value - clean) / (block - clean)
+
     # Cost multiplier for entering a node. INF means do not go there.
     def _hazard_factor(self, node_id: str) -> float:
-        level = self.smoke[node_id]
-        if level >= SMOKE_THRESHOLD:
-            return INF
-        if level <= SMOKE_CLEAN:
-            return 1.0
-        return 1.0 + HAZARD_GAIN * (level - SMOKE_CLEAN) / (SMOKE_THRESHOLD - SMOKE_CLEAN)
+        return max(self._band(self.smoke[node_id], SMOKE_CLEAN, SMOKE_THRESHOLD),
+                   self._band(self.temp[node_id], TEMP_CLEAN, TEMP_BLOCK))
 
     def _edge_cost(self, ui: int, vi: int) -> float:
         base = self.base[ui][vi]
@@ -175,13 +188,21 @@ class VirtualMesh:
         """Advance one second and return the serial lines a gateway would print."""
         self.seq += 1
         for node_id in self.sensors:
-            self.smoke[node_id] = self._scripted_smoke(node_id, tick_index)
+            smoke = self._scripted_smoke(node_id, tick_index)
+            self.smoke[node_id] = smoke
+            # Heat and dryness track the smoke, the way a real fire would.
+            ramp = 0.0 if node_id != HAZARD_NODE else min(
+                1.0, max(0.0, (smoke - BASELINE_SMOKE) / (PEAK_SMOKE - BASELINE_SMOKE)))
+            self.temp[node_id] = round(BASELINE_TEMP + (PEAK_TEMP - BASELINE_TEMP) * ramp, 1)
+            self.humidity[node_id] = int(BASELINE_HUMIDITY + (PEAK_HUMIDITY - BASELINE_HUMIDITY) * ramp)
 
         lines = []
         for node_id in self.sensors:
             lines.append(json.dumps({
                 "node_id": self.index[node_id],
                 "smoke": self.smoke[node_id],
+                "temp": self.temp[node_id],
+                "humidity": self.humidity[node_id],
                 "next_hop": self.solve_next_hop(node_id),
                 "hops": self.hops[node_id],
             }, separators=(",", ":")))
@@ -199,6 +220,7 @@ def route_report(mesh: "VirtualMesh") -> List[str]:
     def clean():
         for nid in mesh.ids:
             mesh.smoke[nid] = 0
+            mesh.temp[nid] = BASELINE_TEMP
 
     def hop_name(nid):
         h = mesh.solve_next_hop(nid)
@@ -239,6 +261,8 @@ if __name__ == "__main__":
     with open(model, "r", encoding="utf-8") as fh:
         mesh = VirtualMesh(json.load(fh))
 
-    print(f"Routing bands: clean <= {SMOKE_CLEAN} < weighted < {SMOKE_THRESHOLD} <= blocked\n")
+    print(f"Smoke bands: clean <= {SMOKE_CLEAN} < weighted < {SMOKE_THRESHOLD} <= blocked")
+    print(f"Temp bands : clean <= {TEMP_CLEAN} < weighted < {TEMP_BLOCK} <= blocked")
+    print("Scan below varies smoke only.\n")
     for line in route_report(mesh):
         print(line)

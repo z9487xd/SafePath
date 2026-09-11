@@ -40,10 +40,15 @@ NEXT_HOP_TRAPPED = -1
 # only changes what the dashboard shows; the nodes decide with their own copy.
 SMOKE_HAZARD = 2000
 SMOKE_WARNING = 800
+TEMP_WARNING = 40.0
+TEMP_HAZARD = 60.0
 HAZARD_GAIN = 2.0
 
 # Served to the dashboard so it never carries its own copy of these numbers.
-LIMITS = {"smoke_warning": SMOKE_WARNING, "smoke_hazard": SMOKE_HAZARD}
+LIMITS = {
+    "smoke_warning": SMOKE_WARNING, "smoke_hazard": SMOKE_HAZARD,
+    "temp_warning": TEMP_WARNING, "temp_hazard": TEMP_HAZARD,
+}
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 osha_rules_path = os.path.abspath(os.path.join(base_dir, "../data/osha_rules.json"))
@@ -53,10 +58,14 @@ frontend_html_path = os.path.abspath(os.path.join(base_dir, "../frontend/dashboa
 osha_rules = []
 if os.path.exists(osha_rules_path):
     with open(osha_rules_path, "r", encoding="utf-8") as f:
+        raw_rules = f.read().strip()
+    if raw_rules:
         try:
-            osha_rules = json.load(f)
+            osha_rules = json.loads(raw_rules)
         except Exception as e:
-            print(f"[Config Error] Failed to parse osha_rules.json: {e}")
+            print(f"[Config Error] Failed to parse osha_rules.json: {e}", flush=True)
+    else:
+        print("[Config] osha_rules.json is empty, no compliance rules loaded", flush=True)
 
 node_name_lookup = {}
 if os.path.exists(model_path):
@@ -129,17 +138,24 @@ def resolve_next_hop(raw_value: Any) -> Optional[str]:
         return "TRAPPED"
     return node_name_lookup.get(hop_index)
 
-def hazard_factor(smoke: float) -> Optional[float]:
+def band_factor(value: float, clean: float, block: float) -> Optional[float]:
+    if value >= block:
+        return None
+    if value <= clean:
+        return 1.0
+    return 1.0 + HAZARD_GAIN * (value - clean) / (block - clean)
+
+def hazard_factor(smoke: float, temp: Optional[float]) -> Optional[float]:
     """Same formula as hazardFactor() in the node firmware. None = impassable.
 
     Display only. It exists so the dashboard can show why a route moved before
     the node changed colour.
     """
-    if smoke >= SMOKE_HAZARD:
+    by_smoke = band_factor(smoke, SMOKE_WARNING, SMOKE_HAZARD)
+    by_temp = 1.0 if temp is None else band_factor(temp, TEMP_WARNING, TEMP_HAZARD)
+    if by_smoke is None or by_temp is None:
         return None
-    if smoke <= SMOKE_WARNING:
-        return 1.0
-    return round(1.0 + HAZARD_GAIN * (smoke - SMOKE_WARNING) / (SMOKE_HAZARD - SMOKE_WARNING), 2)
+    return round(max(by_smoke, by_temp), 2)
 
 # Compares the worst reading anywhere in the site against every OSHA rule.
 # Not per node: a rule is either in force for the site or it is not.
@@ -210,26 +226,25 @@ def ingest_pipeline(raw_json_str: str, loop: asyncio.AbstractEventLoop):
         parsed_smoke = safe_to_float(data.get("smoke", 0))
         smoke = parsed_smoke if parsed_smoke is not None else 0.0
 
-        # No node reports temperature yet, so it is derived from smoke. The
-        # thermal OSHA rule is therefore triggered by a synthesised value.
-        if "temp" in data:
-            parsed_temp = safe_to_float(data["temp"])
-            temp = parsed_temp if parsed_temp is not None else round(24.0 + (smoke / 75.0), 1)
-        else:
-            temp = round(24.0 + (smoke / 75.0), 1)
+        # None when the DHT22 did not answer. Never substituted with a guess:
+        # an invented temperature would fire the thermal rule on its own.
+        temp = safe_to_float(data.get("temp"))
+        humidity = safe_to_float(data.get("humidity"))
 
+        # Status has to agree with routing, so heat alone can mark a node too.
         status = "NORMAL"
-        if smoke >= SMOKE_HAZARD:
+        if smoke >= SMOKE_HAZARD or (temp is not None and temp >= TEMP_HAZARD):
             status = "HAZARD"
-        elif smoke >= SMOKE_WARNING:
+        elif smoke >= SMOKE_WARNING or (temp is not None and temp >= TEMP_WARNING):
             status = "WARNING"
 
-        risk_factor = hazard_factor(smoke)
+        risk_factor = hazard_factor(smoke, temp)
 
         now = time.time()
         payload = {
             "smoke": int(smoke),
             "temp": temp,
+            "humidity": int(humidity) if humidity is not None else None,
             "status": status,
             "next_hop": resolve_next_hop(data.get("next_hop")),
             "hops": data.get("hops"),

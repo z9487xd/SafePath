@@ -103,11 +103,28 @@ void loop() {
         slot.lastSeen = millis();
         slot.everSeen = true;
 
-        char jsonBuffer[96];
+        // Built with integer maths so the line does not depend on float
+        // printf support, and null rather than 0 when a sensor did not answer.
+        char tempText[10] = "null";
+        if (rec.tempDeciC != TEMP_UNKNOWN) {
+            int16_t whole = rec.tempDeciC < 0 ? -rec.tempDeciC : rec.tempDeciC;
+            snprintf(tempText, sizeof(tempText), "%s%d.%d",
+                     rec.tempDeciC < 0 ? "-" : "", whole / 10, whole % 10);
+        }
+
+        char humidityText[6] = "null";
+        if (rec.humidityPct != HUMIDITY_UNKNOWN) {
+            snprintf(humidityText, sizeof(humidityText), "%u", rec.humidityPct);
+        }
+
+        char jsonBuffer[144];
         snprintf(jsonBuffer, sizeof(jsonBuffer),
-                 "{\"node_id\":%u,\"smoke\":%u,\"next_hop\":%d,\"hops\":%u}",
+                 "{\"node_id\":%u,\"smoke\":%u,\"temp\":%s,\"humidity\":%s,"
+                 "\"next_hop\":%d,\"hops\":%u}",
                  rec.originId,
                  rec.smokeLevel,
+                 tempText,
+                 humidityText,
                  rec.nextHop,
                  rec.hops);
 

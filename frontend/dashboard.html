@@ -169,7 +169,7 @@
 
   /* ---------- side panel ---------- */
   #side-panel{
-    width:378px; flex:none;
+    width:406px; flex:none;
     background-color:var(--surface-1);
     border-left:1px solid var(--line);
     display:flex; flex-direction:column; min-height:0;
@@ -321,6 +321,7 @@
               <tr>
                 <th>節點</th>
                 <th class="num">煙霧</th>
+                <th class="num">溫度</th>
                 <th class="num">加權</th>
                 <th>下一跳</th>
                 <th>狀態</th>
@@ -402,6 +403,13 @@
 
     // Walk next_hop to next_hop to trace a full route out. Guarded against a
     // cycle, which stale readings on different nodes can briefly produce.
+    // A dead DHT22 reports nothing rather than a plausible-looking number, so
+    // the dash here means "no reading", never "normal".
+    function tempLabel(state) {
+      if (!state || state.temp == null) return "—";
+      return `${state.temp.toFixed(1)}°`;
+    }
+
     function hopChainFrom(startId) {
       const chain = [startId];
       const limit = Object.keys(topology).length + 1;
@@ -529,7 +537,9 @@
         } else if (state && state.next_hop === "TRAPPED") {
           text = "無路徑";
         } else if (state && (state.status === "HAZARD" || state.status === "WARNING")) {
-          text = `${state.smoke} ppm`;
+          const hot = state.temp != null && limits.temp_warning != null
+            && state.temp >= limits.temp_warning;
+          text = hot ? `${state.smoke} ppm · ${state.temp.toFixed(0)}°C` : `${state.smoke} ppm`;
         }
         note.textContent = text;
       }
@@ -551,6 +561,7 @@
         const cells = [
           ["id", id],
           ["num mono", state ? `${state.smoke}` : "—"],
+          ["num mono", tempLabel(state)],
           ["num mono", state && state.status !== "OFFLINE" ? risk : "—"],
           ["mono", hopLabel(id)]
         ];
@@ -620,6 +631,8 @@
       const rows = [`<div class="tt-title">${id} · ${meta.label}</div>`];
       if (state) {
         rows.push(`<div class="tt-row">煙霧 <b>${state.smoke} ppm</b></div>`);
+        rows.push(`<div class="tt-row">溫度 <b>${tempLabel(state)}${state.temp == null ? "" : "C"}</b></div>`);
+        rows.push(`<div class="tt-row">濕度 <b>${state.humidity == null ? "—" : state.humidity + " %"}</b></div>`);
         rows.push(`<div class="tt-row">風險加權 <b>${state.risk_factor != null ? "×" + state.risk_factor.toFixed(2) : "不可通行"}</b></div>`);
         rows.push(`<div class="tt-row">下一跳 <b>${hopLabel(id)}</b></div>`);
         if (state.hops != null) rows.push(`<div class="tt-row">轉傳 <b>${state.hops} 跳</b></div>`);

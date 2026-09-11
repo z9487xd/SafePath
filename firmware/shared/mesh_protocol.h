@@ -17,6 +17,11 @@
 #define MESH_MAX_NODES 16
 #define MESH_MAX_HOPS 8
 
+// Sentinels for a sensor that did not answer this round. Missing data must be
+// distinguishable from a real reading of zero.
+#define TEMP_UNKNOWN INT16_MIN
+#define HUMIDITY_UNKNOWN 0xFF
+
 #define NEXT_HOP_SAFE (-2)
 #define NEXT_HOP_TRAPPED (-1)
 
@@ -25,6 +30,8 @@ typedef struct __attribute__((packed)) {
     uint8_t  originId;
     uint16_t seq;
     uint16_t smokeLevel;
+    int16_t  tempDeciC;     // tenths of a degree, so no float on the wire
+    uint8_t  humidityPct;
     int8_t   nextHop;
     uint8_t  hops;
 } MeshRecord;

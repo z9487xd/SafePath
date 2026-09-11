@@ -10,6 +10,7 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include <DHTesp.h>
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -19,15 +20,23 @@
 #define LED_PIN 18
 #define NUM_LEDS 16
 #define SMOKE_SENSOR_PIN 34
+#define DHT_PIN 27
+
+// DHT22 refuses to be read faster than every 2s.
+#define DHT_INTERVAL_MS 2200
 
 // Bench testing: build with -D FORCE_NODE_ID=2 to skip the MAC lookup.
 #define WIFI_CHANNEL 1
-// Three routing bands, matching the colours on the dashboard:
-//   <= SMOKE_CLEAN      cost multiplier 1.0, no effect on routing
-//   in between          multiplier ramps 1.0 -> 1.0 + HAZARD_GAIN
-//   >= SMOKE_THRESHOLD  impassable
+// Smoke and heat each map to three routing bands, matching the dashboard:
+//   <= CLEAN      cost multiplier 1.0, no effect on routing
+//   in between    multiplier ramps 1.0 -> 1.0 + HAZARD_GAIN
+//   >= BLOCK      impassable
+// A node's cost is whichever of the two is worse, so either signal alone can
+// close a corridor. Both pairs need calibrating against the real site.
 #define SMOKE_CLEAN 800
 #define SMOKE_THRESHOLD 2000
+#define TEMP_CLEAN_DECIC 400
+#define TEMP_BLOCK_DECIC 600
 #define HAZARD_GAIN 2.0f
 #define SENSOR_WARMUP_MS 5000
 #define NODE_TIMEOUT_MS 6000
@@ -38,6 +47,8 @@ static_assert(NUM_NODES <= MESH_MAX_NODES, "NUM_NODES exceeds mesh record capaci
 // What this node currently believes about every node, its own slot included.
 typedef struct {
     uint16_t smoke;
+    int16_t  temp;
+    uint8_t  humidity;
     uint16_t seq;
     int8_t   nextHop;
     uint8_t  hops;
@@ -46,7 +57,9 @@ typedef struct {
 } NodeState;
 
 CRGB leds[NUM_LEDS];
+DHTesp dht;
 uint8_t chaseIndex = 0;
+unsigned long lastDhtRead = 0;
 
 int localNodeId = -1;
 uint8_t localMac[6] = {0};
@@ -146,6 +159,8 @@ void mergeRecord(const MeshRecord &rec) {
     }
 
     slot.smoke = rec.smokeLevel;
+    slot.temp = rec.tempDeciC;
+    slot.humidity = rec.humidityPct;
     slot.seq = rec.seq;
     slot.nextHop = rec.nextHop;
     slot.hops = rec.hops + 1;
@@ -179,6 +194,8 @@ void broadcastMeshTable() {
         rec.originId = (uint8_t)i;
         rec.seq = meshTable[i].seq;
         rec.smokeLevel = meshTable[i].smoke;
+        rec.tempDeciC = meshTable[i].temp;
+        rec.humidityPct = meshTable[i].humidity;
         rec.nextHop = meshTable[i].nextHop;
         rec.hops = (i == localNodeId) ? 0 : meshTable[i].hops;
     }
@@ -206,6 +223,17 @@ bool isExitNode(int node) {
     return false;
 }
 
+// Maps one reading onto the three bands described above.
+float bandFactor(float value, float clean, float block) {
+    if (value >= block) {
+        return INF;
+    }
+    if (value <= clean) {
+        return 1.0f;
+    }
+    return 1.0f + HAZARD_GAIN * (value - clean) / (block - clean);
+}
+
 // Cost multiplier for entering a node. INF means do not go there.
 float hazardFactor(int node) {
     if (node != localNodeId && !isExitNode(node)) {
@@ -214,16 +242,17 @@ float hazardFactor(int node) {
         }
     }
 
-    uint16_t level = meshTable[node].smoke;
-    if (level >= SMOKE_THRESHOLD) {
-        return INF;
+    // Clean air and normal temperature must both cost exactly 1.0. Without
+    // that floor, sensor baseline drift alone flips routes with no fire.
+    float bySmoke = bandFactor((float)meshTable[node].smoke, SMOKE_CLEAN, SMOKE_THRESHOLD);
+
+    // A dead DHT22 means no information, not danger; smoke still governs.
+    float byTemp = 1.0f;
+    if (meshTable[node].temp != TEMP_UNKNOWN) {
+        byTemp = bandFactor((float)meshTable[node].temp, TEMP_CLEAN_DECIC, TEMP_BLOCK_DECIC);
     }
-    // Clean air must cost exactly 1.0. Without this floor the MQ-2 baseline
-    // drift alone is enough to flip a route back and forth with no fire.
-    if (level <= SMOKE_CLEAN) {
-        return 1.0f;
-    }
-    return 1.0f + HAZARD_GAIN * (float)(level - SMOKE_CLEAN) / (float)(SMOKE_THRESHOLD - SMOKE_CLEAN);
+
+    return (byTemp > bySmoke) ? byTemp : bySmoke;
 }
 
 // Physical distance scaled by how dangerous the destination is.
@@ -350,6 +379,7 @@ void setup() {
 
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
     FastLED.setBrightness(120);
+    dht.setup(DHT_PIN, DHTesp::DHT22);
 
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
@@ -366,6 +396,8 @@ void setup() {
 
     for (int i = 0; i < NUM_NODES; i++) {
         meshTable[i].smoke = 0;
+        meshTable[i].temp = TEMP_UNKNOWN;
+        meshTable[i].humidity = HUMIDITY_UNKNOWN;
         meshTable[i].seq = 0;
         meshTable[i].nextHop = NEXT_HOP_TRAPPED;
         meshTable[i].hops = 0;
@@ -417,6 +449,18 @@ void loop() {
 
     meshTable[localNodeId].smoke = validatedSmoke;
     meshTable[localNodeId].lastSeen = millis();
+
+    if (millis() - lastDhtRead > DHT_INTERVAL_MS) {
+        lastDhtRead = millis();
+        TempAndHumidity reading = dht.getTempAndHumidity();
+        if (dht.getStatus() == DHTesp::ERROR_NONE) {
+            meshTable[localNodeId].temp = (int16_t)lroundf(reading.temperature * 10.0f);
+            meshTable[localNodeId].humidity = (uint8_t)lroundf(reading.humidity);
+        } else {
+            meshTable[localNodeId].temp = TEMP_UNKNOWN;
+            meshTable[localNodeId].humidity = HUMIDITY_UNKNOWN;
+        }
+    }
 
     if (millis() - lastPathCalcTime > 200) {
         lastPathCalcTime = millis();

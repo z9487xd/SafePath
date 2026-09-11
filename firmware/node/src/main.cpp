@@ -62,6 +62,7 @@ uint8_t chaseIndex = 0;
 unsigned long lastDhtRead = 0;
 
 int localNodeId = -1;
+bool meshReady = false;
 uint8_t localMac[6] = {0};
 unsigned long lastIdentityNotice = 0;
 
@@ -97,21 +98,25 @@ int resolveLocalNodeId(const uint8_t *mac) {
 #endif
 }
 
-// A board whose MAC is not in NODE_MACS stays out of the mesh and keeps
-// printing its MAC, which is how you learn what to put into place.py.
-void reportUnprovisioned() {
+// Slow blink plus a repeated serial line, for the two states where this board
+// cannot join the mesh. Distinguishable from a routing result: green means an
+// exit, red means trapped, blue and magenta mean this board needs attention.
+void showStandby(CRGB colour, const char *key) {
     if (millis() - lastIdentityNotice > 1000) {
         lastIdentityNotice = millis();
         char macText[18];
         formatMac(localMac, macText, sizeof(macText));
         char outMsg[64];
-        snprintf(outMsg, sizeof(outMsg), "{\"unprovisioned_mac\":\"%s\"}", macText);
+        snprintf(outMsg, sizeof(outMsg), "{\"%s\":\"%s\"}", key, macText);
         Serial.println(outMsg);
     }
 
-    bool blinkState = ((millis() / 500) % 2) == 0;
-    fill_solid(leds, NUM_LEDS, blinkState ? CRGB::Blue : CRGB::Black);
-    FastLED.show();
+    if (millis() - lastLedUpdate > 40) {
+        lastLedUpdate = millis();
+        bool blinkState = ((millis() / 500) % 2) == 0;
+        fill_solid(leds, NUM_LEDS, blinkState ? colour : CRGB::Black);
+        FastLED.show();
+    }
 }
 
 bool isNodeStale(int node) {
@@ -392,7 +397,9 @@ void setup() {
 
     char macText[18];
     formatMac(localMac, macText, sizeof(macText));
-    Serial.printf("{\"boot_node_id\":%d,\"mac\":\"%s\"}\n", localNodeId, macText);
+    char bootMsg[64];
+    snprintf(bootMsg, sizeof(bootMsg), "{\"boot_node_id\":%d,\"mac\":\"%s\"}", localNodeId, macText);
+    Serial.println(bootMsg);
 
     for (int i = 0; i < NUM_NODES; i++) {
         meshTable[i].smoke = 0;
@@ -431,14 +438,10 @@ void setup() {
 
     cachedNextHop = solveNextHop(localNodeId);
     meshTable[localNodeId].nextHop = (int8_t)cachedNextHop;
+    meshReady = true;
 }
 
-void loop() {
-    if (localNodeId < 0) {
-        reportUnprovisioned();
-        return;
-    }
-
+void runNode() {
     drainRxQueue();
 
     uint16_t rawSmoke = readSensorSmoke();
@@ -480,4 +483,21 @@ void loop() {
         renderLedAnimation(cachedNextHop);
         FastLED.show();
     }
+}
+
+void loop() {
+    if (localNodeId < 0) {
+        // MAC not in NODE_MACS. The printed address is what goes into place.py.
+        showStandby(CRGB::Blue, "unprovisioned_mac");
+    } else if (!meshReady) {
+        // Radio or queue failed to start. Routing would be meaningless here.
+        showStandby(CRGB::Magenta, "mesh_init_failed");
+    } else {
+        runNode();
+    }
+
+    // The loop task never blocks on its own: delayMicroseconds() busy-waits and
+    // FastLED does not yield. Without this the idle task never gets scheduled
+    // and the task watchdog reboots the board.
+    delay(1);
 }

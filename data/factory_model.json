@@ -1,97 +1,93 @@
 {
   "nodes": [
     {
-      "id": "N1",
-      "x": 100,
+      "id": "EX1",
+      "index": 0,
+      "x": 300,
       "y": 300,
-      "type": "corridor",
-      "name": "West Hallway"
+      "type": "exit"
+    },
+    {
+      "id": "N1",
+      "index": 1,
+      "x": 260,
+      "y": 500,
+      "type": "node"
     },
     {
       "id": "N2",
-      "x": 250,
+      "index": 2,
+      "x": 200,
       "y": 300,
-      "type": "junction",
-      "name": "Central Crossing"
+      "type": "node"
     },
     {
       "id": "N3",
-      "x": 400,
-      "y": 300,
-      "type": "hazard_zone",
-      "name": "Chemical Storage"
+      "index": 3,
+      "x": 130,
+      "y": 160,
+      "type": "node"
     },
     {
       "id": "N4",
-      "x": 250,
-      "y": 150,
-      "type": "corridor",
-      "name": "North Corridor"
-    },
-    {
-      "id": "N5",
-      "x": 400,
-      "y": 150,
-      "type": "corridor",
-      "name": "East Corridor"
-    },
-    {
-      "id": "EX1",
-      "x": 50,
-      "y": 300,
-      "type": "exit",
-      "name": "Main Gate A"
+      "index": 4,
+      "x": 260,
+      "y": 200,
+      "type": "node"
     },
     {
       "id": "EX2",
-      "x": 250,
-      "y": 50,
-      "type": "exit",
-      "name": "Emergency Exit B"
+      "index": 5,
+      "x": 100,
+      "y": 100,
+      "type": "exit"
     }
   ],
   "edges": [
     {
-      "source": "N1",
-      "target": "EX1",
-      "base_distance": 2.5,
-      "current_cost": 2.5
+      "source": "EX1",
+      "target": "N4",
+      "cost": 107.7
     },
     {
-      "source": "N1",
-      "target": "N2",
-      "base_distance": 5.0,
-      "current_cost": 5.0
+      "source": "EX1",
+      "target": "N3",
+      "cost": 220.23
+    },
+    {
+      "source": "N3",
+      "target": "N4",
+      "cost": 136.01
     },
     {
       "source": "N2",
       "target": "N3",
-      "base_distance": 6.0,
-      "current_cost": 6.0
+      "cost": 156.52
+    },
+    {
+      "source": "N1",
+      "target": "N2",
+      "cost": 208.81
     },
     {
       "source": "N2",
-      "target": "N4",
-      "base_distance": 4.5,
-      "current_cost": 4.5
-    },
-    {
-      "source": "N3",
-      "target": "N5",
-      "base_distance": 4.0,
-      "current_cost": 4.0
-    },
-    {
-      "source": "N4",
-      "target": "N5",
-      "base_distance": 5.5,
-      "current_cost": 5.5
-    },
-    {
-      "source": "N4",
       "target": "EX2",
-      "base_distance": 3.0,
-      "current_cost": 3.0
+      "cost": 223.61
+    },
+    {
+      "source": "N1",
+      "target": "EX2",
+      "cost": 430.81
+    },
+    {
+      "source": "N4",
+      "target": "N2",
+      "cost": 116.62
+    },
+    {
+      "source": "N4",
+      "target": "N1",
+      "cost": 300.0
     }
   ]
 }

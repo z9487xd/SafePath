@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafePath 現場監控台</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#080B10;
+    --surface-1:#10161E;
+    --surface-2:#161E28;
+    --surface-3:#1B2531;
+    --line:#1F2A36;
+    --line-strong:#2E3C4C;
+
+    --text:#E8EDF3;
+    --text-dim:#8A96A4;
+    --text-faint:#5E6975;
+
+    /* 狀態色固定不隨主題變動；顏色一律搭配形狀與文字，不單獨承載意義 */
+    --node:#3987e5;
+    --good:#0ca30c;
+    --warning:#fab219;
+    --critical:#d03b3b;
+    --offline:#4A5568;
+
+    --radius:6px;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html, body{ height:100%; }
+  body{
+    background-color:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size:14px;
+    display:flex; flex-direction:column;
+    height:100vh; overflow:hidden;
+  }
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace; font-variant-numeric:tabular-nums; }
+  :focus-visible{ outline:2px solid var(--node); outline-offset:2px; }
+
+  #app{ flex:1; display:flex; min-height:0; }
+  #main-panel{ flex:1; display:flex; flex-direction:column; min-width:0; background-color:var(--bg); }
+
+  /* ---------- header ---------- */
+  header{
+    padding:16px 26px;
+    background-color:var(--surface-1);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+  }
+  .brand h1{ font-size:1.06rem; font-weight:600; letter-spacing:.01em; }
+  .brand .subtitle{ font-size:.75rem; color:var(--text-dim); margin-top:3px; }
+
+  .header-meta{ display:flex; align-items:center; gap:10px; flex:none; }
+  .pill{
+    display:inline-flex; align-items:center; gap:7px;
+    padding:6px 12px; border-radius:100px;
+    border:1px solid var(--line-strong);
+    background-color:var(--surface-2);
+    font-size:.75rem; color:var(--text-dim); white-space:nowrap;
+  }
+  .pill .dot{ width:7px; height:7px; border-radius:50%; background-color:var(--critical); flex:none; }
+  .pill.live{ color:var(--text); }
+  .pill.live .dot{ background-color:var(--good); box-shadow:0 0 7px rgba(12,163,12,.9); }
+  #source-pill.is-mock{ color:var(--warning); border-color:rgba(250,178,25,.4); }
+  #source-pill.is-serial{ color:var(--good); border-color:rgba(12,163,12,.4); }
+
+  /* ---------- KPI ---------- */
+  #kpi-row{
+    display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px;
+    padding:14px 26px;
+    border-bottom:1px solid var(--line);
+    background-color:var(--bg);
+  }
+  .kpi{
+    background-color:var(--surface-1);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:11px 14px;
+  }
+  .kpi-head{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+  .kpi-mark{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .kpi-mark.ring{ background:none; border:1.5px dashed var(--critical); }
+  .kpi-label{ font-size:.72rem; color:var(--text-dim); letter-spacing:.02em; }
+  .kpi-value{ font-size:1.5rem; font-weight:600; line-height:1.1; color:var(--text); }
+  .kpi-value .unit{ font-size:.8rem; font-weight:400; color:var(--text-faint); margin-left:2px; }
+
+  /* ---------- map ---------- */
+  #map-container{
+    flex:1; min-height:0;
+    padding:18px 26px 10px;
+    display:flex; justify-content:center; align-items:center;
+    position:relative;
+  }
+  svg#factory-svg{
+    width:100%; height:100%;
+    max-width:780px; max-height:100%;
+    border-radius:var(--radius);
+    border:1px solid var(--line);
+    background-color:var(--surface-1);
+  }
+  .edge-line{ stroke:#3A4A5C; stroke-width:2.5; stroke-linecap:round; }
+  .node-shape{ transition:fill .35s ease, stroke .35s ease; stroke-width:2; cursor:pointer; }
+  .node-label{ fill:#fff; font-size:12px; font-weight:600; text-anchor:middle; pointer-events:none; }
+  .node-note{
+    fill:var(--text-dim); font-family:'IBM Plex Mono', monospace;
+    font-size:8.5px; text-anchor:middle; pointer-events:none;
+  }
+  .badge-glyph{ font-size:9px; font-weight:700; text-anchor:middle; pointer-events:none; fill:#0A0E13; }
+  .badge-ring{ stroke:var(--surface-1); stroke-width:1.5; pointer-events:none; }
+
+  .heat-blob{ pointer-events:none; }
+
+  .isolation-ring{
+    fill:none; stroke:var(--critical); stroke-width:2; stroke-dasharray:4 4;
+    opacity:0; transition:opacity .25s; pointer-events:none;
+  }
+  .isolation-ring.active{ opacity:1; animation:pulse-ring 1.5s ease-in-out infinite; }
+  @keyframes pulse-ring{ 0%,100%{ stroke-opacity:.35; } 50%{ stroke-opacity:1; } }
+
+  .path-flow{
+    stroke:var(--good); stroke-width:3; stroke-linecap:round;
+    stroke-dasharray:9 7; animation:dash-flow 1s linear infinite;
+  }
+  .path-flow.path-muted{ opacity:.22; }
+  @keyframes dash-flow{ to{ stroke-dashoffset:-16; } }
+  @media (prefers-reduced-motion: reduce){
+    .path-flow{ animation:none; }
+    .isolation-ring.active{ animation:none; stroke-opacity:.9; }
+  }
+
+  #tooltip{
+    position:absolute; pointer-events:none; opacity:0;
+    transform:translate(-50%, -114%);
+    background-color:var(--surface-3);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius);
+    padding:9px 11px;
+    font-size:.74rem; line-height:1.6;
+    box-shadow:0 8px 24px rgba(0,0,0,.55);
+    transition:opacity .12s; white-space:nowrap; z-index:5;
+  }
+  #tooltip.visible{ opacity:1; }
+  #tooltip .tt-title{ font-weight:600; font-size:.8rem; margin-bottom:3px; }
+  #tooltip .tt-row{ color:var(--text-dim); }
+  #tooltip .tt-row b{ color:var(--text); font-weight:500; }
+
+  /* ---------- legend ---------- */
+  #legend-bar{
+    display:flex; flex-wrap:wrap; gap:8px 18px;
+    padding:10px 26px 14px;
+    font-size:.71rem; color:var(--text-dim);
+  }
+  .legend-item{ display:flex; align-items:center; gap:6px; }
+  .legend-swatch{
+    width:15px; height:15px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:8px; font-weight:700; color:#0A0E13; flex:none;
+  }
+  .legend-swatch.square{ border-radius:4px; }
+  .legend-swatch.hollow{ background:none; border:1.5px dashed var(--critical); }
+  .legend-line{
+    width:20px; height:0; border-top:2px dashed var(--good); flex:none;
+  }
+
+  /* ---------- side panel ---------- */
+  #side-panel{
+    width:378px; flex:none;
+    background-color:var(--surface-1);
+    border-left:1px solid var(--line);
+    display:flex; flex-direction:column; min-height:0;
+  }
+  .panel-section{ display:flex; flex-direction:column; min-height:0; }
+  .panel-section + .panel-section{ border-top:1px solid var(--line); }
+  .panel-header{
+    padding:12px 16px;
+    font-size:.78rem; font-weight:600; letter-spacing:.02em;
+    color:var(--text);
+    background-color:var(--surface-2);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-header .count{ font-size:.7rem; color:var(--text-dim); font-weight:400; }
+  .panel-body{ padding:12px 14px; overflow-y:auto; min-height:0; }
+  #alerts-section{ flex:0 1 auto; max-height:56%; min-height:0; }
+  #table-section{ flex:1 1 auto; min-height:0; }
+  #alerts-list{ display:flex; flex-direction:column; gap:10px; }
+  .empty-state{ color:var(--text-faint); font-size:.78rem; padding:2px; }
+
+  .alert-card{
+    background-color:var(--surface-2);
+    border:1px solid var(--line-strong);
+    border-left:3px solid var(--critical);
+    border-radius:var(--radius);
+    padding:11px 13px;
+  }
+  .alert-card.is-warning{ border-left-color:var(--warning); }
+  .alert-tag{ font-size:.66rem; color:var(--text-faint); letter-spacing:.05em; }
+  .alert-title{ font-size:.82rem; font-weight:600; margin:4px 0 8px; line-height:1.5; color:var(--text); }
+  .alert-checklist{ list-style:none; display:flex; flex-direction:column; gap:6px; }
+  .alert-checklist li{
+    position:relative; padding-left:17px;
+    color:var(--text-dim); font-size:.76rem; line-height:1.55;
+  }
+  .alert-checklist li::before{
+    content:""; position:absolute; left:0; top:.42em;
+    width:8px; height:8px; border:1.4px solid var(--text-faint); border-radius:2px;
+  }
+
+  table.node-table{ width:100%; border-collapse:collapse; font-size:.75rem; }
+  .node-table th{
+    text-align:left; font-weight:500; color:var(--text-faint);
+    font-size:.68rem; letter-spacing:.03em;
+    padding:0 6px 7px; border-bottom:1px solid var(--line);
+  }
+  .node-table th.num, .node-table td.num{ text-align:right; }
+  .node-table td{ padding:7px 6px; border-bottom:1px solid var(--line); color:var(--text-dim); }
+  .node-table tr:last-child td{ border-bottom:none; }
+  .node-table tr{ cursor:pointer; }
+  .node-table tr:hover td{ background-color:var(--surface-2); }
+  .node-table tr.selected td{ background-color:var(--surface-3); color:var(--text); }
+  .node-table td.id{ color:var(--text); font-weight:600; }
+  .status-cell{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .status-mark{
+    width:14px; height:14px; border-radius:50%; flex:none;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:8px; font-weight:700; color:#0A0E13;
+  }
+
+  @media (max-width: 1000px){
+    #app{ flex-direction:column; overflow-y:auto; }
+    #side-panel{ width:100%; border-left:none; border-top:1px solid var(--line); }
+    #kpi-row{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+    #map-container{ min-height:420px; }
+  }
+</style>
+</head>
+<body>
+  <div id="app">
+    <div id="main-panel">
+      <header>
+        <div class="brand">
+          <h1>SafePath 現場監控台</h1>
+          <div class="subtitle">路徑由各節點 ESP32 邊緣運算決定，本畫面只呈現其回報結果</div>
+        </div>
+        <div class="header-meta">
+          <span class="pill" id="source-pill">資料來源未知</span>
+          <span class="pill" id="conn-pill"><span class="dot"></span><span id="conn-text">未連線</span></span>
+        </div>
+      </header>
+
+      <div id="kpi-row">
+        <div class="kpi">
+          <div class="kpi-head"><span class="kpi-mark" style="background-color:var(--node)"></span><span class="kpi-label">節點連線</span></div>
+          <div class="kpi-value mono" id="kpi-connected">0<span class="unit" id="kpi-total">/0</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-head"><span class="kpi-mark" style="background-color:var(--warning)"></span><span class="kpi-label">警示中</span></div>
+          <div class="kpi-value mono" id="kpi-warning">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-head"><span class="kpi-mark" style="background-color:var(--critical)"></span><span class="kpi-label">危險阻斷</span></div>
+          <div class="kpi-value mono" id="kpi-hazard">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-head"><span class="kpi-mark ring"></span><span class="kpi-label">孤立待援</span></div>
+          <div class="kpi-value mono" id="kpi-trapped">0</div>
+        </div>
+      </div>
+
+      <div id="map-container">
+        <svg id="factory-svg" viewBox="0 0 400 400" role="img" aria-label="場域地圖與即時逃生路徑">
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1A222D" stroke-width="0.5"/>
+            </pattern>
+            <radialGradient id="heat">
+              <stop offset="0%" stop-color="#d03b3b" stop-opacity="0.42"/>
+              <stop offset="60%" stop-color="#d03b3b" stop-opacity="0.13"/>
+              <stop offset="100%" stop-color="#d03b3b" stop-opacity="0"/>
+            </radialGradient>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+              <path d="M1 1L9 5L1 9" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linecap="round"/>
+            </marker>
+          </defs>
+          <rect width="400" height="400" fill="#10161E"/>
+          <rect width="400" height="400" fill="url(#grid)"/>
+          <g id="layer-heat"></g>
+          <g id="layer-edges"></g>
+          <g id="layer-path"></g>
+          <g id="layer-nodes"></g>
+        </svg>
+        <div id="tooltip"></div>
+      </div>
+
+      <div id="legend-bar">
+        <span class="legend-item"><span class="legend-swatch square" style="background-color:var(--good)">✓</span>安全出口</span>
+        <span class="legend-item"><span class="legend-swatch" style="background-color:var(--node)">·</span>正常</span>
+        <span class="legend-item"><span class="legend-swatch" style="background-color:var(--warning)">!</span>警示</span>
+        <span class="legend-item"><span class="legend-swatch" style="background-color:var(--critical)">✕</span>危險阻斷</span>
+        <span class="legend-item"><span class="legend-swatch" style="background-color:var(--offline)">?</span>斷線</span>
+        <span class="legend-item"><span class="legend-swatch hollow"></span>孤立待援</span>
+        <span class="legend-item"><span class="legend-line"></span>ESP32 指向的下一跳</span>
+      </div>
+    </div>
+
+    <aside id="side-panel">
+      <section class="panel-section" id="alerts-section">
+        <div class="panel-header">法規與應變 SOP<span class="count" id="alert-count"></span></div>
+        <div class="panel-body"><div id="alerts-list"><div class="empty-state">系統正常，持續監控中</div></div></div>
+      </section>
+      <section class="panel-section" id="table-section">
+        <div class="panel-header">節點明細<span class="count">點列可於地圖追蹤路線</span></div>
+        <div class="panel-body">
+          <table class="node-table">
+            <thead>
+              <tr>
+                <th>節點</th>
+                <th class="num">煙霧</th>
+                <th class="num">加權</th>
+                <th>下一跳</th>
+                <th>狀態</th>
+              </tr>
+            </thead>
+            <tbody id="node-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+<script>
+    // Dashboard: draws what the ESP32 mesh reports. It decides nothing itself.
+    //
+    // Topology comes from GET /api/topology once at load; live state arrives as
+    // a full snapshot over WebSocket every update and every 2s. Each node's
+    // arrow points at the next_hop its own ESP32 chose, so an arrow here and an
+    // LED arrow on the model always agree.
+
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const NODE_R = 19;
+    const EXIT_SIZE = 38;
+
+    // Status is encoded three ways at once: colour, glyph, and a word. Red and
+    // green are indistinguishable to many people, so colour can never be alone.
+    const STATUS = {
+      NORMAL:  { color:"var(--node)",     glyph:"·", label:"正常" },
+      WARNING: { color:"var(--warning)",  glyph:"!", label:"警示" },
+      HAZARD:  { color:"var(--critical)", glyph:"✕", label:"危險阻斷" },
+      OFFLINE: { color:"var(--offline)",  glyph:"?", label:"斷線" },
+      EXIT:    { color:"var(--good)",     glyph:"✓", label:"安全出口" },
+      UNKNOWN: { color:"var(--line-strong)", glyph:"·", label:"等待資料" }
+    };
+
+    const el = id => document.getElementById(id);
+    const heatLayer = el("layer-heat");
+    const edgesLayer = el("layer-edges");
+    const pathLayer = el("layer-path");
+    const nodesLayer = el("layer-nodes");
+    const tooltip = el("tooltip");
+    const mapContainer = el("map-container");
+
+    let topology = {};
+    let edges = [];
+    let limits = {};
+    let nodeState = {};
+    let frameTime = 0;
+    let selectedNodeId = null;
+
+    const isExit = id => !!topology[id] && topology[id].type === "exit";
+    const sensorIds = () => Object.keys(topology).filter(id => !isExit(id));
+
+    function statusOf(id) {
+      const state = nodeState[id];
+      if (!state) return isExit(id) ? STATUS.EXIT : STATUS.UNKNOWN;
+      if (isExit(id)) return STATUS.EXIT;
+      return STATUS[state.status] || STATUS.UNKNOWN;
+    }
+
+    function hitRadius(id) {
+      return isExit(id) ? EXIT_SIZE / 2 : NODE_R;
+    }
+
+    // Always the value the ESP32 reported. Nothing here recomputes a route.
+    function nextHopOf(id) {
+      const state = nodeState[id];
+      if (!state || state.status === "OFFLINE") return null;
+      return state.next_hop || null;
+    }
+
+    function hopLabel(id) {
+      const hop = nextHopOf(id);
+      if (!hop) return "—";
+      if (hop === "SAFE") return "已在出口";
+      if (hop === "TRAPPED") return "無路徑";
+      return hop;
+    }
+
+    // Walk next_hop to next_hop to trace a full route out. Guarded against a
+    // cycle, which stale readings on different nodes can briefly produce.
+    function hopChainFrom(startId) {
+      const chain = [startId];
+      const limit = Object.keys(topology).length + 1;
+      let current = startId;
+      while (chain.length < limit) {
+        const hop = nextHopOf(current);
+        if (!hop || hop === "SAFE" || hop === "TRAPPED" || chain.includes(hop)) break;
+        chain.push(hop);
+        current = hop;
+      }
+      return chain;
+    }
+
+    // Nodes can sit close together, so a label always drawn below would land on
+    // top of the neighbour. Put it above when something is directly underneath.
+    function noteBelow(id) {
+      const self = topology[id];
+      return !Object.keys(topology).some(other => {
+        if (other === id) return false;
+        const p = topology[other];
+        return Math.abs(p.x - self.x) < 45 && p.y > self.y && p.y - self.y < 60;
+      });
+    }
+
+    // Smoke halo, sized by reading. Shows where a hazard is spreading, not just
+    // which single node crossed a threshold.
+    function renderHeat() {
+      heatLayer.innerHTML = "";
+      sensorIds().forEach(id => {
+        const state = nodeState[id];
+        if (!state || state.status === "OFFLINE") return;
+        const intensity = Math.min(1, (state.smoke || 0) / (limits.smoke_hazard || 1));
+        if (intensity < 0.2) return;
+
+        const blob = document.createElementNS(SVG_NS, "circle");
+        blob.setAttribute("cx", topology[id].x);
+        blob.setAttribute("cy", topology[id].y);
+        blob.setAttribute("r", 26 + intensity * 52);
+        blob.setAttribute("fill", "url(#heat)");
+        blob.setAttribute("class", "heat-blob");
+        blob.setAttribute("opacity", (0.35 + intensity * 0.65).toFixed(2));
+        heatLayer.appendChild(blob);
+      });
+    }
+
+    function renderPaths() {
+      pathLayer.innerHTML = "";
+      const chain = selectedNodeId ? hopChainFrom(selectedNodeId) : [];
+      const chainEdges = new Set();
+      for (let i = 0; i < chain.length - 1; i++) chainEdges.add(`${chain[i]}>${chain[i + 1]}`);
+
+      Object.keys(topology).forEach(id => {
+        const hop = nextHopOf(id);
+        if (!hop || hop === "SAFE" || hop === "TRAPPED" || !topology[hop]) return;
+
+        const from = topology[id];
+        const to = topology[hop];
+        const dx = to.x - from.x, dy = to.y - from.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len, uy = dy / len;
+        // Start at the centre: the path layer sits under the nodes, so the
+        // overhang is hidden. Insetting both ends instead would collapse the
+        // line to zero length for close pairs, leaving the arrow unoriented.
+        const free = len - hitRadius(id) - hitRadius(hop);
+        const x1 = from.x, y1 = from.y;
+        const x2 = to.x - ux * (hitRadius(hop) + 3);
+        const y2 = to.y - uy * (hitRadius(hop) + 3);
+
+        // Bow the line so a long corridor does not pass straight through a node
+        // that happens to sit on the line. No room to bow means no bow.
+        const bow = Math.max(0, Math.min(16, free * 0.18));
+        const cx = (x1 + x2) / 2 - uy * bow;
+        const cy = (y1 + y2) / 2 + ux * bow;
+
+        const path = document.createElementNS(SVG_NS, "path");
+        path.setAttribute("d", `M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`);
+        path.setAttribute("fill", "none");
+        path.setAttribute("marker-end", "url(#arrow)");
+        path.setAttribute("class",
+          selectedNodeId && !chainEdges.has(`${id}>${hop}`) ? "path-flow path-muted" : "path-flow");
+        pathLayer.appendChild(path);
+      });
+    }
+
+    function applyNodeVisual(id) {
+      const shape = el(`shape-${id}`);
+      if (!shape) return;
+
+      const state = nodeState[id];
+      const meta = statusOf(id);
+
+      shape.setAttribute("fill", meta.color);
+      if (id === selectedNodeId) {
+        shape.setAttribute("stroke", "#FFE600");
+        shape.setAttribute("stroke-width", "3");
+      } else {
+        shape.setAttribute("stroke", "rgba(255,255,255,.16)");
+        shape.setAttribute("stroke-width", "2");
+      }
+      if (state && state.status === "OFFLINE") {
+        shape.setAttribute("stroke-dasharray", "4 3");
+      } else {
+        shape.removeAttribute("stroke-dasharray");
+      }
+
+      const showBadge = meta !== STATUS.NORMAL && meta !== STATUS.UNKNOWN;
+      const badge = el(`badge-${id}`);
+      const glyph = el(`glyph-${id}`);
+      if (badge) {
+        badge.setAttribute("fill", meta.color);
+        badge.setAttribute("opacity", showBadge ? "1" : "0");
+      }
+      if (glyph) glyph.textContent = showBadge ? meta.glyph : "";
+
+      const ring = el(`ring-${id}`);
+      if (ring) ring.classList.toggle("active", !!state && state.next_hop === "TRAPPED");
+
+      // Label abnormal nodes only. Normal readings live in the side table, which
+      // keeps the map readable where nodes are close together.
+      const note = el(`note-${id}`);
+      if (note) {
+        let text = "";
+        if (state && state.status === "OFFLINE") {
+          text = `離線 ${Math.max(0, Math.round(frameTime - (state.last_seen || frameTime)))}s`;
+        } else if (state && state.next_hop === "TRAPPED") {
+          text = "無路徑";
+        } else if (state && (state.status === "HAZARD" || state.status === "WARNING")) {
+          text = `${state.smoke} ppm`;
+        }
+        note.textContent = text;
+      }
+    }
+
+    // Also the accessible fallback: every value on the map is readable as text.
+    function renderTable() {
+      const tbody = el("node-tbody");
+      tbody.innerHTML = "";
+
+      sensorIds().forEach(id => {
+        const state = nodeState[id];
+        const meta = statusOf(id);
+        const row = document.createElement("tr");
+        if (id === selectedNodeId) row.classList.add("selected");
+        row.addEventListener("click", () => selectNode(id));
+
+        const risk = state && state.risk_factor != null ? `×${state.risk_factor.toFixed(2)}` : "∞";
+        const cells = [
+          ["id", id],
+          ["num mono", state ? `${state.smoke}` : "—"],
+          ["num mono", state && state.status !== "OFFLINE" ? risk : "—"],
+          ["mono", hopLabel(id)]
+        ];
+
+        cells.forEach(([cls, value]) => {
+          const td = document.createElement("td");
+          td.className = cls;
+          td.textContent = value;
+          row.appendChild(td);
+        });
+
+        const statusTd = document.createElement("td");
+        const wrap = document.createElement("span");
+        wrap.className = "status-cell";
+        const mark = document.createElement("span");
+        mark.className = "status-mark";
+        mark.style.backgroundColor = meta.color;
+        mark.textContent = meta.glyph;
+        wrap.appendChild(mark);
+        wrap.appendChild(document.createTextNode(
+          state && state.next_hop === "TRAPPED" ? "孤立待援" : meta.label));
+        statusTd.appendChild(wrap);
+        row.appendChild(statusTd);
+
+        tbody.appendChild(row);
+      });
+    }
+
+    function updateKpis() {
+      const ids = sensorIds();
+      let connected = 0, warning = 0, hazard = 0, trapped = 0;
+
+      ids.forEach(id => {
+        const state = nodeState[id];
+        if (!state || state.status === "OFFLINE") return;
+        connected++;
+        if (state.status === "WARNING") warning++;
+        if (state.status === "HAZARD") hazard++;
+        if (state.next_hop === "TRAPPED") trapped++;
+      });
+
+      el("kpi-connected").firstChild.textContent = connected;
+      el("kpi-total").textContent = `/${ids.length}`;
+      el("kpi-warning").textContent = warning;
+      el("kpi-hazard").textContent = hazard;
+      el("kpi-trapped").textContent = trapped;
+    }
+
+    function refresh() {
+      Object.keys(topology).forEach(applyNodeVisual);
+      renderHeat();
+      renderPaths();
+      renderTable();
+      updateKpis();
+    }
+
+    function selectNode(id) {
+      selectedNodeId = (selectedNodeId === id) ? null : id;
+      refresh();
+    }
+
+    function showTooltip(id, evt) {
+      const state = nodeState[id];
+      const meta = statusOf(id);
+      const rect = mapContainer.getBoundingClientRect();
+
+      const rows = [`<div class="tt-title">${id} · ${meta.label}</div>`];
+      if (state) {
+        rows.push(`<div class="tt-row">煙霧 <b>${state.smoke} ppm</b></div>`);
+        rows.push(`<div class="tt-row">風險加權 <b>${state.risk_factor != null ? "×" + state.risk_factor.toFixed(2) : "不可通行"}</b></div>`);
+        rows.push(`<div class="tt-row">下一跳 <b>${hopLabel(id)}</b></div>`);
+        if (state.hops != null) rows.push(`<div class="tt-row">轉傳 <b>${state.hops} 跳</b></div>`);
+      } else {
+        rows.push(`<div class="tt-row">此節點無感測硬體</div>`);
+      }
+
+      tooltip.innerHTML = rows.join("");
+      tooltip.style.left = `${evt.clientX - rect.left}px`;
+      tooltip.style.top = `${evt.clientY - rect.top}px`;
+      tooltip.classList.add("visible");
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove("visible");
+    }
+
+    // Fit the view to wherever the nodes actually are, so moving one in
+    // place.py cannot push it off canvas or shrink the map into the middle.
+    function fitViewBox() {
+      const pts = Object.values(topology).filter(n => n && n.x !== undefined);
+      if (!pts.length) return;
+      const pad = 58;
+      const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+      const x = Math.min(...xs) - pad, y = Math.min(...ys) - pad;
+      const w = Math.max(...xs) - Math.min(...xs) + pad * 2;
+      const h = Math.max(...ys) - Math.min(...ys) + pad * 2;
+      const side = Math.max(w, h);
+
+      el("factory-svg").setAttribute("viewBox",
+        `${x - (side - w) / 2} ${y - (side - h) / 2} ${side} ${side}`);
+      document.querySelectorAll("#factory-svg > rect").forEach(r => {
+        r.setAttribute("x", x - side); r.setAttribute("y", y - side);
+        r.setAttribute("width", side * 3); r.setAttribute("height", side * 3);
+      });
+    }
+
+    function initMap() {
+      fitViewBox();
+      edgesLayer.innerHTML = "";
+      heatLayer.innerHTML = "";
+      pathLayer.innerHTML = "";
+      nodesLayer.innerHTML = "";
+
+      (Array.isArray(edges) ? edges : []).forEach(edge => {
+        const p1 = topology[edge.source];
+        const p2 = topology[edge.target];
+        if (!p1 || !p2) return;
+        const line = document.createElementNS(SVG_NS, "line");
+        line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+        line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+        line.setAttribute("class", "edge-line");
+        edgesLayer.appendChild(line);
+      });
+
+      Object.keys(topology).forEach(id => {
+        const node = topology[id];
+        if (!node || node.x === undefined || node.y === undefined) return;
+
+        const g = document.createElementNS(SVG_NS, "g");
+
+        const ring = document.createElementNS(SVG_NS, "circle");
+        ring.setAttribute("cx", node.x);
+        ring.setAttribute("cy", node.y);
+        ring.setAttribute("r", hitRadius(id) + 7);
+        ring.setAttribute("id", `ring-${id}`);
+        ring.setAttribute("class", "isolation-ring");
+        g.appendChild(ring);
+
+        let shape;
+        if (isExit(id)) {
+          shape = document.createElementNS(SVG_NS, "rect");
+          shape.setAttribute("x", node.x - EXIT_SIZE / 2);
+          shape.setAttribute("y", node.y - EXIT_SIZE / 2);
+          shape.setAttribute("width", EXIT_SIZE);
+          shape.setAttribute("height", EXIT_SIZE);
+          shape.setAttribute("rx", 8);
+        } else {
+          shape = document.createElementNS(SVG_NS, "circle");
+          shape.setAttribute("cx", node.x);
+          shape.setAttribute("cy", node.y);
+          shape.setAttribute("r", NODE_R);
+        }
+        shape.setAttribute("id", `shape-${id}`);
+        shape.setAttribute("class", "node-shape");
+        shape.setAttribute("fill", "var(--line-strong)");
+        g.appendChild(shape);
+
+        const label = document.createElementNS(SVG_NS, "text");
+        label.setAttribute("x", node.x);
+        label.setAttribute("y", node.y + 4);
+        label.setAttribute("class", "node-label");
+        label.textContent = id;
+        g.appendChild(label);
+
+        const bx = node.x + hitRadius(id) - 3;
+        const by = node.y - hitRadius(id) + 3;
+
+        const badge = document.createElementNS(SVG_NS, "circle");
+        badge.setAttribute("cx", bx);
+        badge.setAttribute("cy", by);
+        badge.setAttribute("r", 7);
+        badge.setAttribute("id", `badge-${id}`);
+        badge.setAttribute("class", "badge-ring");
+        g.appendChild(badge);
+
+        const glyph = document.createElementNS(SVG_NS, "text");
+        glyph.setAttribute("x", bx);
+        glyph.setAttribute("y", by + 3.2);
+        glyph.setAttribute("id", `glyph-${id}`);
+        glyph.setAttribute("class", "badge-glyph");
+        g.appendChild(glyph);
+
+        const note = document.createElementNS(SVG_NS, "text");
+        note.setAttribute("x", node.x);
+        note.setAttribute("y", node.y + (noteBelow(id) ? hitRadius(id) + 14 : -(hitRadius(id) + 9)));
+        note.setAttribute("id", `note-${id}`);
+        note.setAttribute("class", "node-note");
+        g.appendChild(note);
+
+        shape.addEventListener("click", () => selectNode(id));
+        shape.addEventListener("mousemove", evt => showTooltip(id, evt));
+        shape.addEventListener("mouseleave", hideTooltip);
+
+        nodesLayer.appendChild(g);
+      });
+    }
+
+    function renderAlerts(alerts) {
+      const list = el("alerts-list");
+      const count = el("alert-count");
+
+      if (!alerts || alerts.length === 0) {
+        count.textContent = "";
+        list.innerHTML = '<div class="empty-state">系統正常，持續監控中</div>';
+        return;
+      }
+
+      count.textContent = `${alerts.length} 則`;
+      list.innerHTML = "";
+      alerts.forEach(rule => {
+        const card = document.createElement("div");
+        card.className = "alert-card" + (rule.hazard_type === "THERMAL_OVERLOAD" ? " is-warning" : "");
+
+        const tag = document.createElement("div");
+        tag.className = "alert-tag mono";
+        tag.textContent = rule.rule_id || rule.hazard_type || "ALERT";
+
+        const title = document.createElement("div");
+        title.className = "alert-title";
+        title.textContent = rule.title || "感測值超過法規門檻";
+
+        card.appendChild(tag);
+        card.appendChild(title);
+
+        if (Array.isArray(rule.checklist) && rule.checklist.length > 0) {
+          const ul = document.createElement("ul");
+          ul.className = "alert-checklist";
+          rule.checklist.forEach(item => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          card.appendChild(ul);
+        }
+        list.appendChild(card);
+      });
+    }
+
+    function applySource(source) {
+      const pill = el("source-pill");
+      if (source === "mock") {
+        pill.textContent = "模擬資料（虛擬節點群）";
+        pill.className = "pill is-mock";
+      } else if (source === "serial") {
+        pill.textContent = "實機連線（ESP-NOW → Gateway）";
+        pill.className = "pill is-serial";
+      }
+    }
+
+    function applyFrame(payload) {
+      nodeState = payload.nodes || {};
+      frameTime = payload.timestamp || (Date.now() / 1000);
+      applySource(payload.source);
+      refresh();
+      renderAlerts(payload.compliance_alerts);
+    }
+
+    // Normally served by the backend itself. The file:// case is only for
+    // opening this page straight off disk during development.
+    function backendOrigin() {
+      return window.location.protocol === "file:" ? "127.0.0.1:8000" : window.location.host;
+    }
+
+    async function loadTopology() {
+      const prefix = window.location.protocol === "file:" ? "http://127.0.0.1:8000" : "";
+      const res = await fetch(`${prefix}/api/topology`);
+      if (!res.ok) throw new Error("HTTP error " + res.status);
+      return await res.json();
+    }
+
+    function connectWebSocket() {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const socket = new WebSocket(`${protocol}//${backendOrigin()}/ws`);
+      const pill = el("conn-pill");
+
+      socket.onopen = () => {
+        pill.classList.add("live");
+        el("conn-text").textContent = "已連線";
+      };
+
+      socket.onmessage = event => {
+        try {
+          applyFrame(JSON.parse(event.data));
+        } catch (err) {
+          console.error("Payload parse error:", err);
+        }
+      };
+
+      socket.onclose = () => {
+        pill.classList.remove("live");
+        el("conn-text").textContent = "已斷線，重連中";
+        setTimeout(connectWebSocket, 2000);
+      };
+
+      socket.onerror = err => {
+        console.error("WebSocket error:", err);
+        socket.close();
+      };
+    }
+
+    async function bootstrap() {
+      try {
+        const loaded = await loadTopology();
+        if (!loaded || !loaded.nodes) throw new Error("Invalid topology data structure");
+
+        topology = loaded.nodes;
+        edges = loaded.edges || [];
+        limits = loaded.limits || {};
+
+        initMap();
+        refresh();
+        connectWebSocket();
+      } catch (err) {
+        console.error("Failed to bootstrap topology from backend:", err);
+        el("conn-text").textContent = "拓樸載入失敗";
+      }
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>

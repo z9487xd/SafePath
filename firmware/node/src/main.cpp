@@ -1,20 +1,253 @@
+// Sensor node firmware.
+//
+// Each node reads its own smoke sensor, broadcasts its whole known table over
+// ESP-NOW, and runs Dijkstra locally to choose the next hop toward an exit.
+// The LED strip shows that direction. No server is involved, so the mesh keeps
+// working with mains power and internet down.
+//
+// Every board runs this same binary. Which node a board is comes from matching
+// its MAC against NODE_MACS in topology.h.
+
 #include <Arduino.h>
 #include <FastLED.h>
 #include <WiFi.h>
+#include <esp_now.h>
+#include <esp_wifi.h>
 #include "topology.h"
+#include "mesh_protocol.h"
 
 #define LED_PIN 18
 #define NUM_LEDS 16
-#define LOCAL_NODE_ID ID_N2
+#define SMOKE_SENSOR_PIN 34
+
+// Bench testing: build with -D FORCE_NODE_ID=2 to skip the MAC lookup.
+#define WIFI_CHANNEL 1
+// Three routing bands, matching the colours on the dashboard:
+//   <= SMOKE_CLEAN      cost multiplier 1.0, no effect on routing
+//   in between          multiplier ramps 1.0 -> 1.0 + HAZARD_GAIN
+//   >= SMOKE_THRESHOLD  impassable
+#define SMOKE_CLEAN 800
+#define SMOKE_THRESHOLD 2000
+#define HAZARD_GAIN 2.0f
+#define SENSOR_WARMUP_MS 5000
+#define NODE_TIMEOUT_MS 6000
+#define RX_QUEUE_DEPTH 8
+
+static_assert(NUM_NODES <= MESH_MAX_NODES, "NUM_NODES exceeds mesh record capacity");
+
+// What this node currently believes about every node, its own slot included.
+typedef struct {
+    uint16_t smoke;
+    uint16_t seq;
+    int8_t   nextHop;
+    uint8_t  hops;
+    unsigned long lastSeen;
+    bool     everSeen;
+} NodeState;
 
 CRGB leds[NUM_LEDS];
-float dynamicGraph[NUM_NODES][NUM_NODES];
+uint8_t chaseIndex = 0;
 
-uint16_t readSensorSmoke() {
-    return 350;
+int localNodeId = -1;
+uint8_t localMac[6] = {0};
+unsigned long lastIdentityNotice = 0;
+
+NodeState meshTable[NUM_NODES];
+static QueueHandle_t rxQueue = NULL;
+
+unsigned long systemBootTime = 0;
+unsigned long lastLedUpdate = 0;
+unsigned long lastBroadcastTime = 0;
+unsigned long lastPathCalcTime = 0;
+uint16_t broadcastInterval = 200;
+uint16_t localSeq = 0;
+int cachedNextHop = NEXT_HOP_TRAPPED;
+
+void formatMac(const uint8_t *mac, char *out, size_t outSize) {
+    snprintf(out, outSize, "%02X:%02X:%02X:%02X:%02X:%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
-int solveNextHop(int startNode, int hazardNode) {
+int resolveLocalNodeId(const uint8_t *mac) {
+#ifdef FORCE_NODE_ID
+    return FORCE_NODE_ID;
+#else
+    for (int i = 0; i < NUM_NODES; i++) {
+        if (!NODE_MAC_VALID[i]) {
+            continue;
+        }
+        if (memcmp(NODE_MACS[i], mac, 6) == 0) {
+            return i;
+        }
+    }
+    return -1;
+#endif
+}
+
+// A board whose MAC is not in NODE_MACS stays out of the mesh and keeps
+// printing its MAC, which is how you learn what to put into place.py.
+void reportUnprovisioned() {
+    if (millis() - lastIdentityNotice > 1000) {
+        lastIdentityNotice = millis();
+        char macText[18];
+        formatMac(localMac, macText, sizeof(macText));
+        char outMsg[64];
+        snprintf(outMsg, sizeof(outMsg), "{\"unprovisioned_mac\":\"%s\"}", macText);
+        Serial.println(outMsg);
+    }
+
+    bool blinkState = ((millis() / 500) % 2) == 0;
+    fill_solid(leds, NUM_LEDS, blinkState ? CRGB::Blue : CRGB::Black);
+    FastLED.show();
+}
+
+bool isNodeStale(int node) {
+    return !meshTable[node].everSeen || (millis() - meshTable[node].lastSeen > NODE_TIMEOUT_MS);
+}
+
+// Runs on the WiFi task. Queue the packet and return; merging it here would
+// race with the path calculation in loop().
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
+void onDataReceived(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len) {
+#else
+void onDataReceived(const uint8_t *mac, const uint8_t *incomingData, int len) {
+#endif
+    if (len < (int)MESH_HEADER_SIZE || len > (int)sizeof(MeshPacket)) {
+        return;
+    }
+
+    MeshPacket packet;
+    memcpy(&packet, incomingData, len);
+
+    if (packet.magic != MESH_MAGIC || packet.recordCount > MESH_MAX_NODES) {
+        return;
+    }
+    if ((size_t)len != meshPacketSize(packet.recordCount)) {
+        return;
+    }
+
+    xQueueSend(rxQueue, &packet, 0);
+}
+
+void mergeRecord(const MeshRecord &rec) {
+    if (rec.originId >= NUM_NODES || rec.originId == localNodeId) {
+        return;
+    }
+    if (rec.hops >= MESH_MAX_HOPS) {
+        return;
+    }
+
+    NodeState &slot = meshTable[rec.originId];
+
+    // A rebooted node restarts at sequence 0, which looks older than what we
+    // hold. Once it has been silent past the timeout, accept any sequence.
+    if (!isNodeStale(rec.originId) && !meshSeqNewer(rec.seq, slot.seq)) {
+        return;
+    }
+
+    slot.smoke = rec.smokeLevel;
+    slot.seq = rec.seq;
+    slot.nextHop = rec.nextHop;
+    slot.hops = rec.hops + 1;
+    slot.lastSeen = millis();
+    slot.everSeen = true;
+}
+
+void drainRxQueue() {
+    MeshPacket packet;
+    while (xQueueReceive(rxQueue, &packet, 0) == pdTRUE) {
+        for (uint8_t i = 0; i < packet.recordCount; i++) {
+            mergeRecord(packet.records[i]);
+        }
+    }
+}
+
+// Broadcast everything we know, not just our own reading. Each node relaying
+// the full table is what carries data beyond a single radio hop.
+void broadcastMeshTable() {
+    MeshPacket packet;
+    packet.magic = MESH_MAGIC;
+    packet.senderId = localNodeId;
+    packet.recordCount = 0;
+
+    for (int i = 0; i < NUM_NODES; i++) {
+        if (i != localNodeId && (isNodeStale(i) || meshTable[i].hops >= MESH_MAX_HOPS)) {
+            continue;
+        }
+
+        MeshRecord &rec = packet.records[packet.recordCount++];
+        rec.originId = (uint8_t)i;
+        rec.seq = meshTable[i].seq;
+        rec.smokeLevel = meshTable[i].smoke;
+        rec.nextHop = meshTable[i].nextHop;
+        rec.hops = (i == localNodeId) ? 0 : meshTable[i].hops;
+    }
+
+    uint8_t broadcastMac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    esp_now_send(broadcastMac, (uint8_t *)&packet, meshPacketSize(packet.recordCount));
+}
+
+// Averaged to damp ADC noise; the raw pin jitters by tens of counts.
+uint16_t readSensorSmoke() {
+    uint32_t accumulator = 0;
+    for (int i = 0; i < 16; i++) {
+        accumulator += analogRead(SMOKE_SENSOR_PIN);
+        delayMicroseconds(50);
+    }
+    return (uint16_t)(accumulator / 16);
+}
+
+bool isExitNode(int node) {
+    for (int i = 0; i < NUM_EXITS; i++) {
+        if (EXIT_NODES[i] == node) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Cost multiplier for entering a node. INF means do not go there.
+float hazardFactor(int node) {
+    if (node != localNodeId && !isExitNode(node)) {
+        if (millis() - systemBootTime > SENSOR_WARMUP_MS && isNodeStale(node)) {
+            return INF;
+        }
+    }
+
+    uint16_t level = meshTable[node].smoke;
+    if (level >= SMOKE_THRESHOLD) {
+        return INF;
+    }
+    // Clean air must cost exactly 1.0. Without this floor the MQ-2 baseline
+    // drift alone is enough to flip a route back and forth with no fire.
+    if (level <= SMOKE_CLEAN) {
+        return 1.0f;
+    }
+    return 1.0f + HAZARD_GAIN * (float)(level - SMOKE_CLEAN) / (float)(SMOKE_THRESHOLD - SMOKE_CLEAN);
+}
+
+// Physical distance scaled by how dangerous the destination is.
+float edgeCost(int u, int v) {
+    float base = BASE_GRAPH[u][v];
+    if (base >= INF) {
+        return INF;
+    }
+
+    float fv = hazardFactor(v);
+    if (fv >= INF) {
+        return INF;
+    }
+
+    return base * fv;
+}
+
+// Dijkstra to the cheapest reachable exit.
+// Returns the adjacent node to walk to, or NEXT_HOP_SAFE / NEXT_HOP_TRAPPED.
+int solveNextHop(int startNode) {
+    if (isExitNode(startNode) && meshTable[startNode].smoke < SMOKE_THRESHOLD) {
+        return NEXT_HOP_SAFE;
+    }
+
     float dist[NUM_NODES];
     bool visited[NUM_NODES];
     int parent[NUM_NODES];
@@ -35,59 +268,172 @@ int solveNextHop(int startNode, int hazardNode) {
                 u = v;
             }
         }
-        if (u == -1) break;
+        if (u == -1) {
+            break;
+        }
         visited[u] = true;
 
         for (int v = 0; v < NUM_NODES; v++) {
-            float cost = dynamicGraph[u][v];
-            if (u == hazardNode || v == hazardNode) cost = INF;
-            if (!visited[v] && cost < INF && dist[u] + cost < dist[v]) {
+            if (visited[v]) {
+                continue;
+            }
+
+            float cost = edgeCost(u, v);
+            if (cost < INF && (dist[u] + cost < dist[v])) {
                 dist[v] = dist[u] + cost;
                 parent[v] = u;
             }
         }
     }
 
-    int bestExit = (dist[ID_EX1] < dist[ID_EX2]) ? ID_EX1 : ID_EX2;
-    if (dist[bestExit] >= INF) return -1;
+    int bestExit = -1;
+    float minExitDist = INF;
+    for (int i = 0; i < NUM_EXITS; i++) {
+        int exitCandidate = EXIT_NODES[i];
+        if (exitCandidate == startNode) {
+            continue;
+        }
+        if (dist[exitCandidate] < minExitDist) {
+            minExitDist = dist[exitCandidate];
+            bestExit = exitCandidate;
+        }
+    }
 
-    int path[NUM_NODES];
-    int len = 0;
+    if (bestExit == -1 || minExitDist >= INF) {
+        return NEXT_HOP_TRAPPED;
+    }
+
     int curr = bestExit;
-    while (curr != -1 && len < NUM_NODES) {
-        path[len++] = curr;
+    int hops = 0;
+    while (parent[curr] != -1 && parent[curr] != startNode && hops < NUM_NODES) {
         curr = parent[curr];
+        hops++;
     }
-    if (len >= 2 && path[len - 1] == startNode) {
-        return path[len - 2];
+
+    return (parent[curr] == startNode) ? curr : NEXT_HOP_TRAPPED;
+}
+
+// Solid green at an exit, blinking red when trapped, otherwise a chase
+// animation running in the direction of nextHop.
+void renderLedAnimation(int nextHop) {
+    if (nextHop == NEXT_HOP_SAFE) {
+        fill_solid(leds, NUM_LEDS, CRGB::Green);
+        return;
     }
-    return -1;
+
+    if (nextHop == NEXT_HOP_TRAPPED) {
+        bool blinkState = ((millis() / 250) % 2) == 0;
+        fill_solid(leds, NUM_LEDS, blinkState ? CRGB::Red : CRGB::Black);
+        return;
+    }
+
+    fadeToBlackBy(leds, NUM_LEDS, 60);
+
+    int8_t dir = 1;
+    if (nextHop >= 0 && nextHop < NUM_NODES) {
+        dir = LED_DIRECTIONS[localNodeId][nextHop];
+    }
+
+    if (dir >= 0) {
+        leds[chaseIndex] = CRGB::Green;
+    } else {
+        leds[(NUM_LEDS - 1) - chaseIndex] = CRGB::Green;
+    }
+
+    chaseIndex = (chaseIndex + 1) % NUM_LEDS;
 }
 
 void setup() {
     Serial.begin(115200);
+    systemBootTime = millis();
+    pinMode(SMOKE_SENSOR_PIN, INPUT);
+
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+    FastLED.setBrightness(120);
+
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    WiFi.macAddress(localMac);
+
+    localNodeId = resolveLocalNodeId(localMac);
+    if (localNodeId < 0) {
+        return;
+    }
+
+    char macText[18];
+    formatMac(localMac, macText, sizeof(macText));
+    Serial.printf("{\"boot_node_id\":%d,\"mac\":\"%s\"}\n", localNodeId, macText);
 
     for (int i = 0; i < NUM_NODES; i++) {
-        for (int j = 0; j < NUM_NODES; j++) {
-            dynamicGraph[i][j] = BASE_GRAPH[i][j];
-        }
+        meshTable[i].smoke = 0;
+        meshTable[i].seq = 0;
+        meshTable[i].nextHop = NEXT_HOP_TRAPPED;
+        meshTable[i].hops = 0;
+        meshTable[i].lastSeen = millis();
+        meshTable[i].everSeen = false;
     }
+    meshTable[localNodeId].everSeen = true;
+
+    rxQueue = xQueueCreate(RX_QUEUE_DEPTH, sizeof(MeshPacket));
+    if (rxQueue == NULL) {
+        Serial.println("RX queue creation failed");
+        return;
+    }
+
+    esp_wifi_set_promiscuous(true);
+    esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
+    esp_wifi_set_promiscuous(false);
+
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("ESP-NOW init failed");
+        return;
+    }
+
+    esp_now_register_recv_cb(onDataReceived);
+
+    esp_now_peer_info_t peerInfo = {};
+    memset(peerInfo.peer_addr, 0xFF, 6);
+    peerInfo.channel = WIFI_CHANNEL;
+    peerInfo.encrypt = false;
+    esp_now_add_peer(&peerInfo);
+
+    cachedNextHop = solveNextHop(localNodeId);
+    meshTable[localNodeId].nextHop = (int8_t)cachedNextHop;
 }
 
 void loop() {
-    uint16_t smoke = readSensorSmoke();
-    int hazardNode = (smoke > 2000) ? LOCAL_NODE_ID : -1;
-    int nextHop = solveNextHop(LOCAL_NODE_ID, hazardNode);
-
-    fill_solid(leds, NUM_LEDS, CRGB::Black);
-    if (nextHop == ID_N1) {
-        fill_solid(leds, NUM_LEDS, CRGB::Green);
-    } else if (nextHop == ID_N3) {
-        fill_solid(leds, NUM_LEDS, CRGB::Blue);
-    } else {
-        fill_solid(leds, NUM_LEDS, CRGB::Red);
+    if (localNodeId < 0) {
+        reportUnprovisioned();
+        return;
     }
-    FastLED.show();
-    delay(50);
+
+    drainRxQueue();
+
+    uint16_t rawSmoke = readSensorSmoke();
+    uint16_t validatedSmoke = 0;
+    if (millis() - systemBootTime > SENSOR_WARMUP_MS) {
+        validatedSmoke = rawSmoke;
+    }
+
+    meshTable[localNodeId].smoke = validatedSmoke;
+    meshTable[localNodeId].lastSeen = millis();
+
+    if (millis() - lastPathCalcTime > 200) {
+        lastPathCalcTime = millis();
+        cachedNextHop = solveNextHop(localNodeId);
+        meshTable[localNodeId].nextHop = (int8_t)cachedNextHop;
+    }
+
+    if (millis() - lastBroadcastTime > broadcastInterval) {
+        lastBroadcastTime = millis();
+        broadcastInterval = 180 + (uint16_t)(esp_random() % 41);
+        meshTable[localNodeId].seq = ++localSeq;
+        broadcastMeshTable();
+    }
+
+    if (millis() - lastLedUpdate > 40) {
+        lastLedUpdate = millis();
+        renderLedAnimation(cachedNextHop);
+        FastLED.show();
+    }
 }

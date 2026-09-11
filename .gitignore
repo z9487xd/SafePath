@@ -37,3 +37,16 @@ Thumbs.db
 # VS Code (keep configuration files, ignore local state)
 .vscode/*.log
 .vscode/
+
+# Local working records / AI session notes (NEVER upload)
+.notes/
+.claude/
+CLAUDE.local.md
+*.local.md
+graphify-out/
+*.session.md
+
+# Local runtime artifacts
+*.log
+.env
+.env.*

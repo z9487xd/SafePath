@@ -29,6 +29,12 @@ typedef struct {
 static QueueHandle_t rxQueue = NULL;
 static OriginState originTable[MESH_MAX_NODES];
 
+// NULL once the queue and the radio are both up. Held as the message itself so
+// loop() can keep repeating it: the backend normally opens the port well after
+// the gateway has booted, and a line printed once in setup() is long gone by
+// then - the operator would see a silent port and no reason for it.
+static const char *startupError = NULL;
+
 // Runs on the WiFi task. Validate and queue only; printing happens in loop().
 void onDataReceived(RecvInfoPtr info, const uint8_t *incomingData, int len) {
     if (len < (int)MESH_HEADER_SIZE || len > (int)sizeof(MeshPacket)) {
@@ -59,7 +65,7 @@ void setup() {
 
     rxQueue = xQueueCreate(RX_QUEUE_DEPTH, sizeof(MeshPacket));
     if (rxQueue == NULL) {
-        Serial.println("{\"error\": \"Queue creation failed\"}");
+        startupError = "queue creation failed";
         return;
     }
 
@@ -71,14 +77,30 @@ void setup() {
     esp_wifi_set_promiscuous(false);
 
     if (esp_now_init() != ESP_OK) {
-        Serial.println("{\"error\": \"ESP-NOW init failed\"}");
+        startupError = "ESP-NOW init failed";
         return;
     }
 
-    esp_now_register_recv_cb(onDataReceived);
+    // Unchecked, this fails silently and the gateway then blocks forever on a
+    // queue nothing will ever fill, which reads exactly like a quiet mesh.
+    if (esp_now_register_recv_cb(onDataReceived) != ESP_OK) {
+        startupError = "ESP-NOW receive callback registration failed";
+        return;
+    }
 }
 
 void loop() {
+    // setup() can return before the queue exists. Reaching xQueueReceive() with
+    // a NULL handle takes the board down instead of reporting anything, so the
+    // fault has to be answered here rather than assumed away.
+    if (startupError != NULL) {
+        char errMsg[96];
+        snprintf(errMsg, sizeof(errMsg), "{\"error\":\"%s\"}", startupError);
+        Serial.println(errMsg);
+        delay(2000);
+        return;
+    }
+
     MeshPacket packet;
 
     if (xQueueReceive(rxQueue, &packet, portMAX_DELAY) != pdTRUE) {

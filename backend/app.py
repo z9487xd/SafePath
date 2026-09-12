@@ -2,8 +2,10 @@
 
 A worker thread reads JSON lines - from the gateway over USB serial, or from
 the virtual mesh when USE_MOCK_SERIAL=true - and turns them into a per-node
-snapshot. Every update and every 2s tick, the snapshot is matched against the
-OSHA rules and pushed to all connected dashboards over WebSocket.
+snapshot. A single publisher task matches that snapshot against the OSHA rules
+and pushes it to every connected dashboard, at most PUBLISH_HZ times a second
+and at least once every 2s. The reader thread only marks the snapshot dirty; it
+never writes to a socket itself.
 
 Routing is not decided here. next_hop arrives already computed by the ESP32.
 
@@ -25,12 +27,19 @@ import serial.tools.list_ports
 # Works both as `backend.app:app` from the repo root and `app:app` from backend/.
 try:
     from .mock_mesh import VirtualMesh, HAZARD_NODE
+    from . import opendata_client
 except ImportError:
     from mock_mesh import VirtualMesh, HAZARD_NODE
+    import opendata_client
 
 USE_MOCK_SERIAL = os.getenv("USE_MOCK_SERIAL", "false").lower() == "true"
 DEFAULT_BAUD = 115200
 NODE_TIMEOUT_SECONDS = 6.0
+
+# Frames per second pushed to the dashboards, independent of how fast the gateway
+# talks. The mock emits one line per node per second; real hardware emits about
+# five, so the arrival rate is not something the browser should inherit.
+PUBLISH_HZ = 10
 
 # Mirrors firmware/shared/mesh_protocol.h
 NEXT_HOP_SAFE = -2
@@ -56,16 +65,40 @@ model_path = os.path.abspath(os.path.join(base_dir, "../data/factory_model.json"
 frontend_html_path = os.path.abspath(os.path.join(base_dir, "../frontend/dashboard.html"))
 
 osha_rules = []
-if os.path.exists(osha_rules_path):
+_osha_mtime = None
+
+# Re-read when the file changes on disk. --reload restarts on .py edits but not on
+# .json ones, so without this an edited rule file looks like a rule that does not
+# work. A parse error keeps the last good set rather than silently dropping every
+# rule mid-run.
+def load_osha_rules():
+    global osha_rules, _osha_mtime
+    try:
+        mtime = os.path.getmtime(osha_rules_path)
+    except OSError:
+        return
+    if mtime == _osha_mtime:
+        return
+    _osha_mtime = mtime
+
     with open(osha_rules_path, "r", encoding="utf-8") as f:
         raw_rules = f.read().strip()
-    if raw_rules:
-        try:
-            osha_rules = json.loads(raw_rules)
-        except Exception as e:
-            print(f"[Config Error] Failed to parse osha_rules.json: {e}", flush=True)
-    else:
+    if not raw_rules:
+        osha_rules = []
         print("[Config] osha_rules.json is empty, no compliance rules loaded", flush=True)
+        return
+    try:
+        parsed = json.loads(raw_rules)
+    except Exception as e:
+        print(f"[Config Error] osha_rules.json unchanged, parse failed: {e}", flush=True)
+        return
+    if not isinstance(parsed, list):
+        print("[Config Error] osha_rules.json must be a list of rules", flush=True)
+        return
+    osha_rules = parsed
+    print(f"[Config] Loaded {len(osha_rules)} OSHA rules", flush=True)
+
+load_osha_rules()
 
 node_name_lookup = {}
 if os.path.exists(model_path):
@@ -82,27 +115,49 @@ else:
     print(f"[Config Error] {model_path} not found, run tools/place.py", flush=True)
 
 class ConnectionManager:
+    """Keeps the sockets single-writer.
+
+    A websocket cannot be written by two tasks at once, and there were three
+    writers racing: the serial thread on every incoming line, the periodic tick,
+    and the first frame handed to a dashboard as it connects. The lock serialises
+    them; publish() below stops the rate depending on the gateway.
+    """
+
     def __init__(self):
         self.active_connections: List[WebSocket] = []
+        self.send_lock = asyncio.Lock()
 
-    async def connect(self, websocket: WebSocket):
+    # A new dashboard is registered only after its first frame is away, so the
+    # publisher cannot interleave a broadcast into the same socket mid-handshake.
+    async def connect(self, websocket: WebSocket, initial: Optional[str] = None):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        async with self.send_lock:
+            if initial is not None:
+                try:
+                    await websocket.send_text(initial)
+                except Exception:
+                    return
+            self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
 
     async def broadcast(self, message: str):
-        for connection in list(self.active_connections):
-            try:
-                await connection.send_text(message)
-            except Exception:
-                self.disconnect(connection)
+        async with self.send_lock:
+            for connection in list(self.active_connections):
+                try:
+                    await connection.send_text(message)
+                except Exception:
+                    self.disconnect(connection)
 
 manager = ConnectionManager()
 latest_telemetry: Dict[str, Any] = {}
 telemetry_lock = threading.Lock()
+
+# Set by the reader thread, cleared by publish(). The thread never touches the
+# event loop now, which is what removed the overlapping sends.
+telemetry_dirty = False
 
 # SERIAL_PORT wins; otherwise pick the first port that looks like a USB bridge.
 def auto_detect_serial_port() -> str:
@@ -165,9 +220,12 @@ def match_compliance_all(snapshot: Dict[str, Any]) -> List[Dict[str, Any]]:
     max_smoke = 0.0
     max_temp = 0.0
 
+    # OFFLINE nodes still count. A node that stops answering during a fire is the
+    # expected outcome, not a reason to relax: the last thing it reported was the
+    # corridor burning, and nothing since has said otherwise. Skipping it made the
+    # alert vanish at the exact moment it mattered, leaving a calm-looking board.
+    # Nodes that were never heard from hold smoke 0 and contribute nothing.
     for node_data in snapshot.values():
-        if node_data.get("status") == "OFFLINE":
-            continue
         s = safe_to_float(node_data.get("smoke")) or 0.0
         t = safe_to_float(node_data.get("temp")) or 0.0
         if s > max_smoke:
@@ -206,7 +264,8 @@ def build_frame(snapshot: Dict[str, Any]) -> str:
         "compliance_alerts": match_compliance_all(snapshot)
     })
 
-def ingest_pipeline(raw_json_str: str, loop: asyncio.AbstractEventLoop):
+def ingest_pipeline(raw_json_str: str):
+    global telemetry_dirty
     try:
         data = json.loads(raw_json_str)
         raw_node_id = data.get("node_id")
@@ -235,7 +294,10 @@ def ingest_pipeline(raw_json_str: str, loop: asyncio.AbstractEventLoop):
         status = "NORMAL"
         if smoke >= SMOKE_HAZARD or (temp is not None and temp >= TEMP_HAZARD):
             status = "HAZARD"
-        elif smoke >= SMOKE_WARNING or (temp is not None and temp >= TEMP_WARNING):
+        # Strictly greater, to agree with band_factor()/bandFactor(), where a
+        # reading equal to the clean edge still costs exactly 1.0. Using >= here
+        # painted a node amber while the routing considered it untouched.
+        elif smoke > SMOKE_WARNING or (temp is not None and temp > TEMP_WARNING):
             status = "WARNING"
 
         risk_factor = hazard_factor(smoke, temp)
@@ -254,16 +316,13 @@ def ingest_pipeline(raw_json_str: str, loop: asyncio.AbstractEventLoop):
 
         with telemetry_lock:
             latest_telemetry[node_str_id] = payload
-
-        asyncio.run_coroutine_threadsafe(
-            manager.broadcast(build_frame(update_staleness_and_snapshot())), loop
-        )
+            telemetry_dirty = True
     except Exception as e:
         print(f"[Ingest Error] {e} on raw payload: {raw_json_str}", flush=True)
 
 # The virtual mesh replaces the serial port, not the parsing below it: the
 # lines it produces are byte-for-byte what the real gateway prints.
-def mock_serial_worker(loop: asyncio.AbstractEventLoop):
+def mock_serial_worker():
     with open(model_path, "r", encoding="utf-8") as f:
         mesh = VirtualMesh(json.load(f))
 
@@ -272,11 +331,11 @@ def mock_serial_worker(loop: asyncio.AbstractEventLoop):
     tick = 0
     while True:
         for line in mesh.tick(tick):
-            ingest_pipeline(line, loop)
+            ingest_pipeline(line)
         tick += 1
         time.sleep(1.0)
 
-def real_serial_worker(loop: asyncio.AbstractEventLoop):
+def real_serial_worker():
     ser = None
     while True:
         try:
@@ -292,7 +351,7 @@ def real_serial_worker(loop: asyncio.AbstractEventLoop):
                 continue
 
             if line.startswith("{") and line.endswith("}"):
-                ingest_pipeline(line, loop)
+                ingest_pipeline(line)
             else:
                 time.sleep(0.01)
 
@@ -306,22 +365,43 @@ def real_serial_worker(loop: asyncio.AbstractEventLoop):
             ser = None
             time.sleep(2.0)
 
-# Nodes that go quiet produce no events, so publish on a timer as well.
-async def periodic_staleness_checker():
+# The only writer to the dashboards. Publishing per incoming line meant a whole
+# snapshot serialised and sent for every record - about five per node per second
+# on real hardware, from a thread, with sends overlapping on the same socket.
+# Coalescing here caps that at PUBLISH_HZ and keeps the 2s floor, so nodes that
+# went quiet still turn OFFLINE on screen without anything arriving to trigger it.
+async def publisher():
+    global telemetry_dirty
+    last_publish = 0.0
     while True:
-        await asyncio.sleep(2.0)
-        await manager.broadcast(build_frame(update_staleness_and_snapshot()))
+        await asyncio.sleep(1.0 / PUBLISH_HZ)
+        with telemetry_lock:
+            due = telemetry_dirty
+            telemetry_dirty = False
+        now = time.monotonic()
+        if due or now - last_publish >= 2.0:
+            last_publish = now
+            # This is the only task feeding the dashboards. An exception escaping
+            # here would end it silently and freeze every board on its last frame
+            # with nothing on screen or in the log to say why, so one bad frame
+            # must cost one frame and no more.
+            try:
+                load_osha_rules()
+                await manager.broadcast(build_frame(update_staleness_and_snapshot()))
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                print(f"[Publish Error] {e}", flush=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    loop = asyncio.get_running_loop()
     target_worker = mock_serial_worker if USE_MOCK_SERIAL else real_serial_worker
-    worker_thread = threading.Thread(target=target_worker, args=(loop,), daemon=True)
+    worker_thread = threading.Thread(target=target_worker, daemon=True)
     worker_thread.start()
 
-    staleness_task = asyncio.create_task(periodic_staleness_checker())
+    publish_task = asyncio.create_task(publisher())
     yield
-    staleness_task.cancel()
+    publish_task.cancel()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -350,13 +430,25 @@ async def get_topology():
             return {"nodes": nodes_dict, "edges": data.get("edges", []), "limits": LIMITS}
     return {"nodes": {}, "edges": [], "limits": LIMITS}
 
+# The three Labour Ministry datasets, read from the on-disk cache. Separate from
+# the WebSocket feed on purpose: this is reference material a person looks up, not
+# live telemetry, so it does not belong in a frame pushed five times a second.
+@app.get("/api/resources")
+async def get_resources():
+    try:
+        return opendata_client.resources_payload()
+    except Exception as e:
+        # An empty payload leaves the resources tab blank but keeps the monitoring
+        # view working, which is the half that matters during an incident.
+        print(f"[OpenData Error] {e}", flush=True)
+        return {"datasets": {}, "inspection_hotlines": {},
+                "case_service_contacts": {}, "elearning_courses": []}
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-
     snapshot = update_staleness_and_snapshot()
-    if snapshot:
-        await websocket.send_text(build_frame(snapshot))
+    await manager.connect(websocket, build_frame(snapshot) if snapshot else None)
 
     try:
         while True:

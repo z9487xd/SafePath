@@ -1,0 +1,52 @@
+[
+  {
+    "rule_id": "SAFEPATH-SMOKE-01",
+    "hazard_type": "SMOKE_RISING",
+    "title": "煙霧讀值進入加權區間，路徑已開始繞行",
+    "legal_basis": "",
+    "trigger_threshold": { "smoke": 801 },
+    "checklist": [
+      "確認煙霧來源位置，對照儀表板判斷是哪一段走道",
+      "此時走道尚可通行，但節點已開始把人導向替代路線",
+      "通知現場人員依燈條指示移動，不要依既有固定指示牌",
+      "若為誤報，檢查該節點 MQ-2 是否受粉塵、油煙或通風影響"
+    ]
+  },
+  {
+    "rule_id": "SAFEPATH-SMOKE-02",
+    "hazard_type": "SMOKE_BLOCKING",
+    "title": "煙霧達封鎖門檻，該走道已判定不可通行",
+    "legal_basis": "",
+    "trigger_threshold": { "smoke": 2000 },
+    "checklist": [
+      "該走道已從所有路徑計算中排除，任何節點都不會再導引人員進入",
+      "確認受影響區域人員已循替代路線疏散",
+      "確認消防通報已發出",
+      "若有人員傷亡，切換至「災後應變與職安資源」頁比對第37條通報門檻"
+    ]
+  },
+  {
+    "rule_id": "SAFEPATH-HEAT-01",
+    "hazard_type": "THERMAL_OVERLOAD",
+    "title": "溫度讀值進入加權區間",
+    "legal_basis": "",
+    "trigger_threshold": { "temp": 40.1 },
+    "checklist": [
+      "溫度與煙霧取較嚴重者計算路徑成本，單一訊號即可影響路由",
+      "確認是火源熱輻射，或僅為製程設備、日照等環境因素",
+      "DHT22 量測上限 80 °C，接近上限時精度下降，不應作為火場溫度的唯一依據"
+    ]
+  },
+  {
+    "rule_id": "SAFEPATH-HEAT-02",
+    "hazard_type": "THERMAL_OVERLOAD",
+    "title": "溫度達封鎖門檻，該走道已判定不可通行",
+    "legal_basis": "",
+    "trigger_threshold": { "temp": 60 },
+    "checklist": [
+      "60 °C 為 DHT22 可信範圍邊緣，超過此值感測器讀數不應再被信任",
+      "若感測器失效，溫度回報為「無資料」而非數值，路徑判定退回僅依煙霧",
+      "確認受影響區域人員已循替代路線疏散"
+    ]
+  }
+]

@@ -201,6 +201,7 @@
   .alert-card.is-warning{ border-left-color:var(--warning); }
   .alert-tag{ font-size:.66rem; color:var(--text-faint); letter-spacing:.05em; }
   .alert-title{ font-size:.82rem; font-weight:600; margin:4px 0 8px; line-height:1.5; color:var(--text); }
+  .alert-basis{ font-size:.72rem; color:var(--text-dim); margin-top:4px; letter-spacing:.01em; }
   .alert-checklist{ list-style:none; display:flex; flex-direction:column; gap:6px; }
   .alert-checklist li{
     position:relative; padding-left:17px;
@@ -472,14 +473,20 @@
             <input type="number" id="res-deaths" min="0" value="0">
           </div>
           <div class="field-row">
-            <label for="res-hospitalized">需住院治療人數</label>
+            <label for="res-injured">罹災人數（含死亡）</label>
+            <input type="number" id="res-injured" min="0" value="0">
+          </div>
+          <div class="field-row">
+            <label for="res-hospitalized">其中需住院治療</label>
             <input type="number" id="res-hospitalized" min="0" value="0">
           </div>
         </div>
         <div id="res-notify-result"></div>
         <div class="res-note">
-          門檻依職業安全衛生法第37條：死亡、罹災人數三人以上、罹災人數一人以上且需住院治療，
-          雇主應於8小時內通報勞動檢查機構。此欄位為人工回報，系統之煙霧／溫度感測無法自行判定人員死傷。
+          門檻依職業安全衛生法第37條：發生死亡災害、罹災人數三人以上、罹災人數一人以上且需住院治療，
+          雇主應於8小時內通報勞動檢查機構。三款各自獨立，任一款成立即須通報。
+          該條另有「其他經中央主管機關指定公告之災害」一款，屬個案公告、本表無法判定，故未列入。
+          此欄位為人工回報，系統之煙霧／溫度感測無法自行判定人員死傷。
           通報專線取自勞動部開放資料集「勞動檢查機構通報專線」，僅於機構異動電話時更新，非即時查詢。
         </div>
       </div>
@@ -552,79 +559,24 @@
     let selectedNodeId = null;
 
     // ---------------------------------------------------------------
-    // 災後應變與職安資源 — static reference data, baked in at build time.
-    // None of this is fetched live: it comes from three MOL open datasets
-    // downloaded once and frozen here, matching the "no server dependency"
-    // principle the mesh itself follows. Nothing below reads nodeState or
-    // writes back to it — this view is informational only.
+    // 災後應變與職安資源 — 由後端 /api/resources 提供
     // ---------------------------------------------------------------
+    // 這三筆勞動部開放資料存放於 data/opendata/*.json，由 backend/opendata_client.py
+    // 讀取並負責更新；此處只負責顯示。資料不寫在前端有三個理由：
+    //   一、前端寫死等於沒有任何程式碼取用過開放資料，「串接」不成立
+    //   二、與後端的法規門檻比對形成兩套來源，違反單一資料來源原則
+    //   三、文字留在瀏覽器裡就送不到 Gateway，法條燈板需要伺服器端持有
+    // 後端讀的是磁碟快取而非即時查詢，所以斷網時這一頁照樣可用 —— 對一套以
+    // 「火災時斷網是常態」為前提的系統，這是刻意的，不是將就。
+    // 本區塊不讀 nodeState 也不寫回，純資訊呈現。
 
-    // 勞動部開放資料：勞動檢查機構通報專線 (A17000000J-030004-X7b)
-    // 直轄市已設專屬勞動檢查處者採該處；其餘縣市依職安署北/中/南區中心管轄。
-    const INSPECTION_HOTLINES = {
-      "臺北市": { agency: "臺北市政府勞動檢查處", phone: "0910-922707", address: "臺北市萬華區艋舺大道101號7樓" },
-      "新北市": { agency: "新北市政府勞動檢查處", phone: "(02)22523299", address: "新北市板橋區華江一路216號1至3樓" },
-      "桃園市": { agency: "桃園市政府勞動檢查處", phone: "(03)3333305", address: "桃園市桃園區大同路108號13樓" },
-      "臺中市": { agency: "臺中市政府勞動檢查處", phone: "(04)25273553", address: "臺中市豐原區陽明街36號" },
-      "臺南市": { agency: "臺南市職安健康處", phone: "(06)2150806", address: "臺南市安平區永華路二段6號" },
-      "高雄市": { agency: "高雄市政府勞動檢查處", phone: "(07)7336959#9", address: "高雄市鳥松區大埤路117號3樓" },
-      "基隆市": { agency: "勞動部職業安全衛生署北區職業安全衛生中心", phone: "(02)89956720", address: "新北市新莊區中平路439號南棟9樓" },
-      "新竹市": { agency: "勞動部職業安全衛生署北區職業安全衛生中心", phone: "(02)89956720", address: "新北市新莊區中平路439號南棟9樓" },
-      "新竹縣": { agency: "勞動部職業安全衛生署北區職業安全衛生中心", phone: "(02)89956720", address: "新北市新莊區中平路439號南棟9樓" },
-      "宜蘭縣": { agency: "勞動部職業安全衛生署北區職業安全衛生中心", phone: "(02)89956720", address: "新北市新莊區中平路439號南棟9樓" },
-      "花蓮縣": { agency: "勞動部職業安全衛生署北區職業安全衛生中心", phone: "(02)89956720", address: "新北市新莊區中平路439號南棟9樓" },
-      "連江縣": { agency: "勞動部職業安全衛生署北區職業安全衛生中心", phone: "(02)89956720", address: "新北市新莊區中平路439號南棟9樓" },
-      "苗栗縣": { agency: "勞動部職業安全衛生署中區職業安全衛生中心", phone: "(04)22550633#129", address: "臺中市南屯區黎明路二段501號7樓" },
-      "彰化縣": { agency: "勞動部職業安全衛生署中區職業安全衛生中心", phone: "(04)22550633#129", address: "臺中市南屯區黎明路二段501號7樓" },
-      "南投縣": { agency: "勞動部職業安全衛生署中區職業安全衛生中心", phone: "(04)22550633#129", address: "臺中市南屯區黎明路二段501號7樓" },
-      "雲林縣": { agency: "勞動部職業安全衛生署中區職業安全衛生中心", phone: "(04)22550633#129", address: "臺中市南屯區黎明路二段501號7樓" },
-      "嘉義市": { agency: "勞動部職業安全衛生署南區職業安全衛生中心", phone: "(07)2354861#9", address: "高雄市新興區七賢一路386號7-12樓" },
-      "嘉義縣": { agency: "勞動部職業安全衛生署南區職業安全衛生中心", phone: "(07)2354861#9", address: "高雄市新興區七賢一路386號7-12樓" },
-      "屏東縣": { agency: "勞動部職業安全衛生署南區職業安全衛生中心", phone: "(07)2354861#9", address: "高雄市新興區七賢一路386號7-12樓" },
-      "臺東縣": { agency: "勞動部職業安全衛生署南區職業安全衛生中心", phone: "(07)2354861#9", address: "高雄市新興區七賢一路386號7-12樓" },
-      "澎湖縣": { agency: "勞動部職業安全衛生署南區職業安全衛生中心", phone: "(07)2354861#9", address: "高雄市新興區七賢一路386號7-12樓" },
-      "金門縣": { agency: "勞動部職業安全衛生署南區職業安全衛生中心", phone: "(07)2354861#9", address: "高雄市新興區七賢一路386號7-12樓" }
-    };
     // 特殊備註：位於加工出口區／科學園區內的廠址另有專屬管理局受理通報
     // （例如高雄楠梓/前鎮、臺中/中港、屏東、新竹、中科、南科等分處），
     // 不在此清單內，實際部署前需先確認廠址是否落在園區範圍。
-
-    // 勞動部開放資料：職災勞工個案服務各縣市聯絡窗口資訊 (A17000000J-030077-Zb5)
-    const CASE_SERVICE_CONTACTS = {
-      "基隆市": { agency: "基隆市政府法制及勞動處", phone: "(02)24250575", address: "基隆市中正區義一路1號5樓" },
-      "臺北市": { agency: "臺北市勞動力重建運用處", phone: "(02)23381600 轉 5313、5314、5315、5316、5320", address: "臺北市萬華區艋舺大道101號5樓" },
-      "新北市": { agency: "新北市政府勞工局", phone: "(02)29603456 轉 6307、6308、6316、6323、6332、6333", address: "新北市板橋區中山路一段161號7樓" },
-      "桃園市": { agency: "桃園市政府勞動局", phone: "(03)3333814 轉 6814、6815", address: "桃園市桃園區縣府路1號3樓" },
-      "新竹市": { agency: "新竹市政府勞工及青年處", phone: "(03)5323007", address: "新竹市東區龍山西路99號2樓" },
-      "新竹縣": { agency: "新竹縣政府勞工處", phone: "(03)5518101 轉 3013、3016", address: "新竹縣竹北市光明六路10號" },
-      "苗栗縣": { agency: "苗栗縣政府勞工及青年發展處", phone: "(037)371446", address: "苗栗縣苗栗市府前路1號" },
-      "臺中市": { agency: "臺中市政府勞工局", phone: "(04)22289111", address: "臺中市西屯區台灣大道三段99號文心樓4樓" },
-      "彰化縣": { agency: "彰化縣政府勞工處", phone: "(04)7235010", address: "彰化縣彰化市中興路100號8樓" },
-      "南投縣": { agency: "南投縣政府社會及勞動局", phone: "(049)2201118", address: "南投縣南投市中興路660號" },
-      "雲林縣": { agency: "雲林縣政府勞動暨青年事務發展處", phone: "(05)5522840", address: "雲林縣斗六市雲林路二段515號" },
-      "嘉義市": { agency: "嘉義市政府勞工及青年發展處", phone: "(05)2254321 轉 101、102", address: "嘉義市東區中山路199號" },
-      "嘉義縣": { agency: "嘉義縣政府勞工暨青年發展處", phone: "(05)3620123 轉 8049", address: "嘉義縣太保市祥和一路東段1號" },
-      "臺南市": { agency: "臺南市政府勞工局", phone: "(06)2991111 轉 8431、8535、8538、1036", address: "臺南市新營區民治路36號世紀大樓7樓" },
-      "高雄市": { agency: "高雄市政府勞工局", phone: "(07)8124613 轉 523、524、527、555、556、560、522", address: "高雄市前鎮區鎮中路6號6樓" },
-      "屏東縣": { agency: "屏東縣政府勞動暨青年發展處", phone: "(08)7519160", address: "屏東縣屏東市自由路17號" },
-      "宜蘭縣": { agency: "宜蘭縣政府勞工處", phone: "(03)9251000 轉 1763、1738", address: "宜蘭縣宜蘭市縣政北路1號" },
-      "花蓮縣": { agency: "花蓮縣政府社會處", phone: "(03)8225377", address: "花蓮縣花蓮市府前路17號" },
-      "臺東縣": { agency: "臺東縣政府社會處", phone: "(089)328254 轉 381", address: "臺東縣臺東市中山路276號" },
-      "澎湖縣": { agency: "澎湖縣政府社會處", phone: "(06)9274400 轉 555", address: "澎湖縣馬公市治平路32號" },
-      "連江縣": { agency: "連江縣政府民政社會處", phone: "(0836)22381 轉 6100", address: "連江縣南竿鄉介壽村76號" },
-      "金門縣": { agency: "金門縣政府社會處", phone: "(082)318823", address: "金門縣金城鎮民權路173號" }
-    };
-
-    // 勞動部開放資料：全民勞教e網課程 (A17000000J-020052-GZl)
-    // 僅列「職業安全衛生與職災保護」類別下，與危害辨識/應變處理直接相關的課程。
-    const OSH_COURSES = [
-      { title: "勞工安全與職業傷害預防概論", desc: "含職業災害發生時的應變與處理", url: "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10000335" },
-      { title: "危害辨識及風險評估", desc: "災害的因果關係、職業災害的模型、機械危害點", url: "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10001033" },
-      { title: "機械災害預防", desc: "切割及捲夾災害危害預防與案例解說", url: "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10001032" },
-      { title: "影像式作業人員危害鑑別技術", desc: "人員異常倒下、危險區域辨別之智能預警應用", url: "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10001154" },
-      { title: "看見安全", desc: "安全的核心價值與交付工作、交付安全的觀念", url: "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10001031" },
-      { title: "防爆電器安全", desc: "防爆電氣設備原理、法規與選用", url: "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10000859" }
-    ];
+    let INSPECTION_HOTLINES = {};
+    let CASE_SERVICE_CONTACTS = {};
+    let OSH_COURSES = [];
+    let DATASET_META = {};
 
     const isExit = id => !!topology[id] && topology[id].type === "exit";
     const sensorIds = () => Object.keys(topology).filter(id => !isExit(id));
@@ -793,7 +745,7 @@
         } else if (state && (state.status === "HAZARD" || state.status === "WARNING")) {
           const hot = state.temp != null && limits.temp_warning != null
             && state.temp >= limits.temp_warning;
-          text = hot ? `${state.smoke} ppm · ${state.temp.toFixed(0)}°C` : `${state.smoke} ppm`;
+          text = hot ? `${state.smoke} ADC · ${state.temp.toFixed(0)}°C` : `${state.smoke} ADC`;
         }
         note.textContent = text;
       }
@@ -884,7 +836,7 @@
 
       const rows = [`<div class="tt-title">${id} · ${meta.label}</div>`];
       if (state) {
-        rows.push(`<div class="tt-row">煙霧 <b>${state.smoke} ppm</b></div>`);
+        rows.push(`<div class="tt-row">煙霧 <b>${state.smoke} ADC</b></div>`);
         rows.push(`<div class="tt-row">溫度 <b>${tempLabel(state)}${state.temp == null ? "" : "C"}</b></div>`);
         rows.push(`<div class="tt-row">濕度 <b>${state.humidity == null ? "—" : state.humidity + " %"}</b></div>`);
         rows.push(`<div class="tt-row">風險加權 <b>${state.risk_factor != null ? "×" + state.risk_factor.toFixed(2) : "不可通行"}</b></div>`);
@@ -1042,6 +994,14 @@
         card.appendChild(tag);
         card.appendChild(title);
 
+        // 只有填了法源才顯示。空字串代表尚未查證，寧可不標也不要標一個查不到的條號。
+        if (rule.legal_basis) {
+          const basis = document.createElement("div");
+          basis.className = "alert-basis";
+          basis.textContent = rule.legal_basis;
+          card.appendChild(basis);
+        }
+
         if (Array.isArray(rule.checklist) && rule.checklist.length > 0) {
           const ul = document.createElement("ul");
           ul.className = "alert-checklist";
@@ -1151,11 +1111,21 @@
 
     function renderNotifyResult() {
       const county = el("res-county").value;
-      const deaths = parseInt(el("res-deaths").value, 10) || 0;
-      const hospitalized = parseInt(el("res-hospitalized").value, 10) || 0;
+      const deaths = Math.max(0, parseInt(el("res-deaths").value, 10) || 0);
+      const hospitalized = Math.max(0, parseInt(el("res-hospitalized").value, 10) || 0);
+      // 罹災人數至少等於死亡與住院人數，避免只填了其中一欄就漏判
+      const injured = Math.max(
+        Math.max(0, parseInt(el("res-injured").value, 10) || 0), deaths, hospitalized);
       const box = el("res-notify-result");
 
-      const triggered = deaths >= 1 || hospitalized >= 1;
+      // 第37條三款各自獨立成立，任一款達標即須通報。
+      // 第二款看的是罹災人數，與是否住院無關 —— 三人受傷而無人住院仍須通報，
+      // 因此「罹災人數」必須是獨立欄位，不能用住院人數頂替。
+      const reasons = [];
+      if (deaths >= 1) reasons.push("發生死亡災害");
+      if (injured >= 3) reasons.push("罹災人數三人以上");
+      if (injured >= 1 && hospitalized >= 1) reasons.push("罹災人數一人以上且需住院治療");
+      const triggered = reasons.length > 0;
       const info = INSPECTION_HOTLINES[county];
 
       if (!triggered) {
@@ -1167,13 +1137,9 @@
         return;
       }
 
-      const reason = deaths >= 1
-        ? "已有死亡案例"
-        : (hospitalized >= 3 ? "罹災人數三人以上" : "罹災人數一人以上且需住院治療");
-
       box.innerHTML = `
         <div class="result-box is-trigger">
-          <div class="result-title">已達法定通報門檻（${reason}）— 應於8小時內通報</div>
+          <div class="result-title">已達法定通報門檻（${reasons.join("、")}）— 應於8小時內通報</div>
           <div class="result-line">受理機構　<b>${info.agency}</b></div>
           <div class="result-line">通報專線　<b>${info.phone}</b></div>
           <div class="result-line">地址　${info.address}</div>
@@ -1219,20 +1185,55 @@
       });
     }
 
-    function initResourcesView() {
+    async function loadResources() {
+      const prefix = window.location.protocol === "file:" ? "http://127.0.0.1:8000" : "";
+      const res = await fetch(`${prefix}/api/resources`);
+      if (!res.ok) throw new Error("HTTP error " + res.status);
+      return await res.json();
+    }
+
+    function renderResources() {
       populateCountySelects();
       renderNotifyResult();
       renderCaseResult();
       renderCourseList();
+    }
 
+    // A failed fetch must not leave three silently blank panels looking like
+    // there is simply no help available.
+    function showResourcesError() {
+      const msg = '<div class="result-box is-quiet">職安資源載入失敗，無法取得 /api/resources。'
+                + '監控與導引功能不受影響。</div>';
+      ["res-notify-result", "res-case-result", "res-course-list"].forEach(id => {
+        const box = el(id);
+        if (box) box.innerHTML = msg;
+      });
+    }
+
+    async function initResourcesView() {
+      // Listeners are bound before the fetch, so tabs and inputs respond while it
+      // is still in flight and keep working even if it never arrives.
       el("res-county").addEventListener("change", renderNotifyResult);
       el("res-deaths").addEventListener("input", renderNotifyResult);
+      el("res-injured").addEventListener("input", renderNotifyResult);
       el("res-hospitalized").addEventListener("input", renderNotifyResult);
       el("res-county-case").addEventListener("change", renderCaseResult);
 
       el("tab-monitor").addEventListener("click", () => switchView("monitor"));
       el("tab-resources").addEventListener("click", () => switchView("resources"));
       SUBVIEWS.forEach(v => el(`subtab-${v}`).addEventListener("click", () => switchSubview(v)));
+
+      try {
+        const data = await loadResources();
+        INSPECTION_HOTLINES = data.inspection_hotlines || {};
+        CASE_SERVICE_CONTACTS = data.case_service_contacts || {};
+        OSH_COURSES = data.elearning_courses || [];
+        DATASET_META = data.datasets || {};
+        renderResources();
+      } catch (err) {
+        console.error("Failed to load open data resources:", err);
+        showResourcesError();
+      }
     }
 
     initResourcesView();

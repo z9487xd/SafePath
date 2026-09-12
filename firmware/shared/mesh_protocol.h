@@ -14,7 +14,7 @@
 #include <stdint.h>
 
 #define MESH_MAGIC 0x5A
-#define MESH_MAX_NODES 16
+#define MESH_MAX_NODES 24
 #define MESH_MAX_HOPS 8
 
 // Sentinels for a sensor that did not answer this round. Missing data must be

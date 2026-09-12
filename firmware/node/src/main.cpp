@@ -41,6 +41,9 @@
 #define TEMP_BLOCK_DECIC 600
 #define HAZARD_GAIN 2.0f
 #define SENSOR_WARMUP_MS 5000
+// Grace after warm-up for the first broadcasts to arrive, before an unheard-from
+// neighbour is treated as impassable.
+#define MESH_SETTLE_MS 1000
 #define NODE_TIMEOUT_MS 6000
 #define RX_QUEUE_DEPTH 8
 
@@ -78,6 +81,8 @@ unsigned long lastPathCalcTime = 0;
 uint16_t broadcastInterval = 200;
 uint16_t localSeq = 0;
 int cachedNextHop = NEXT_HOP_TRAPPED;
+uint16_t sendFailures = 0;
+unsigned long lastSendFault = 0;
 
 void formatMac(const uint8_t *mac, char *out, size_t outSize) {
     snprintf(out, outSize, "%02X:%02X:%02X:%02X:%02X:%02X",
@@ -215,7 +220,18 @@ void broadcastMeshTable() {
     packet.senderId = localNodeId;
     packet.recordCount = 0;
 
+    bool warmingUp = (millis() - systemBootTime <= SENSOR_WARMUP_MS);
+
     for (int i = 0; i < NUM_NODES; i++) {
+        // Say nothing about ourselves until the MQ-2 has warmed. Until then this
+        // node holds a reading of 0, and broadcasting that asserts clean air to
+        // everyone else - so a board that resets inside a fire would spend five
+        // seconds inviting its neighbours to route people into it. Staying quiet
+        // leaves them on the last reading they had, which then ages out to INF on
+        // its own. No data is allowed to mean safe anywhere else here either.
+        if (i == localNodeId && warmingUp) {
+            continue;
+        }
         if (i != localNodeId && (isNodeStale(i) || meshTable[i].hops >= MESH_MAX_HOPS)) {
             continue;
         }
@@ -231,7 +247,30 @@ void broadcastMeshTable() {
     }
 
     uint8_t broadcastMac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    esp_now_send(broadcastMac, (uint8_t *)&packet, meshPacketSize(packet.recordCount));
+    esp_err_t sent = esp_now_send(broadcastMac, (uint8_t *)&packet,
+                                  meshPacketSize(packet.recordCount));
+
+    // A node that cannot transmit is not dangerous: its neighbours stop hearing
+    // it, mark it stale and route around it, which is the fail-safe doing its
+    // job. So this does not stop the node - it still routes itself correctly
+    // from what it receives. But the strip would look perfectly normal while the
+    // board is mute, so the serial line is the only place it can surface.
+    if (sent != ESP_OK) {
+        sendFailures++;
+        if (millis() - lastSendFault > 2000) {
+            lastSendFault = millis();
+            char msg[72];
+            snprintf(msg, sizeof(msg), "{\"send_failed\":%u,\"node_id\":%d}",
+                     sendFailures, localNodeId);
+            Serial.println(msg);
+        }
+    } else if (sendFailures > 0) {
+        char msg[72];
+        snprintf(msg, sizeof(msg), "{\"send_recovered_after\":%u,\"node_id\":%d}",
+                 sendFailures, localNodeId);
+        Serial.println(msg);
+        sendFailures = 0;
+    }
 }
 
 // Averaged to damp ADC noise; the raw pin jitters by tens of counts.
@@ -258,7 +297,13 @@ float bandFactor(float value, float clean, float block) {
 // Cost multiplier for entering a node. INF means do not go there.
 float hazardFactor(int node) {
     if (node != localNodeId && !isExitNode(node)) {
-        if (millis() - systemBootTime > SENSOR_WARMUP_MS && isNodeStale(node)) {
+        // Nobody transmits their own reading until warm, so at the instant the
+        // warm-up ends every neighbour is still unheard-from. Without the extra
+        // second that lands as one blink of "trapped" on every strip at power-on,
+        // before the first packets land. The fail-safe is not weakened, only
+        // started a second later: a genuinely absent node still goes to INF.
+        if (millis() - systemBootTime > SENSOR_WARMUP_MS + MESH_SETTLE_MS
+                && isNodeStale(node)) {
             return INF;
         }
     }
@@ -363,9 +408,48 @@ int solveNextHop(int startNode) {
     return (parent[curr] == startNode) ? curr : NEXT_HOP_TRAPPED;
 }
 
-// Solid green at an exit, blinking red when trapped, otherwise a chase
-// animation running in the direction of nextHop.
-void renderLedAnimation(int nextHop) {
+// How bad the air is where this board itself stands, from its own readings only.
+//
+// Routing deliberately ignores this: edgeCost() weights the *destination*, so a
+// node's own smoke never inflates its own way out - which is right, the people
+// standing in the smoke are the ones who most need to be sent somewhere. But it
+// left the strip saying it with a calm green chase, identical to a clean
+// corridor. Direction is still the message; urgency is how loudly it is said.
+typedef enum {
+    URGENCY_CLEAR = 0,
+    URGENCY_RISING = 1,
+    URGENCY_CRITICAL = 2
+} Urgency;
+
+// Same band edges as the routing cost and the dashboard colours, so a strip that
+// has turned red cannot disagree with a node drawn red on screen.
+Urgency localUrgency() {
+    uint16_t smoke = meshTable[localNodeId].smoke;
+    int16_t temp = meshTable[localNodeId].temp;
+    bool hasTemp = (temp != TEMP_UNKNOWN);
+
+    if (smoke >= SMOKE_THRESHOLD || (hasTemp && temp >= TEMP_BLOCK_DECIC)) {
+        return URGENCY_CRITICAL;
+    }
+    if (smoke > SMOKE_CLEAN || (hasTemp && temp > TEMP_CLEAN_DECIC)) {
+        return URGENCY_RISING;
+    }
+    return URGENCY_CLEAR;
+}
+
+// Frame interval per level. The dot crosses 16 LEDs in 640ms / 400ms / 240ms, so
+// the corridor visibly hurries as it fills. The fade stays put at 60: the tail
+// length is set by the fade alone, not by the frame rate, so the chase keeps the
+// same shape and only gets faster.
+const uint16_t LED_FRAME_MS[3] = { 40, 25, 15 };
+
+// Not CRGB::Orange: at this brightness a WS2812B renders it green-ish, which is
+// the one thing this colour must never be mistaken for. Tune on the real strip.
+const CRGB LED_CHASE_COLOUR[3] = { CRGB::Green, CRGB(255, 100, 0), CRGB::Red };
+
+// Blinking red across the whole strip when trapped, otherwise a chase running
+// towards nextHop, coloured and paced by how bad it is here.
+void renderLedAnimation(int nextHop, Urgency urgency) {
     if (nextHop == NEXT_HOP_SAFE) {
         fill_solid(leds, NUM_LEDS, CRGB::Green);
         return;
@@ -384,10 +468,11 @@ void renderLedAnimation(int nextHop) {
         dir = LED_DIRECTIONS[localNodeId][nextHop];
     }
 
+    CRGB colour = LED_CHASE_COLOUR[urgency];
     if (dir >= 0) {
-        leds[chaseIndex] = CRGB::Green;
+        leds[chaseIndex] = colour;
     } else {
-        leds[(NUM_LEDS - 1) - chaseIndex] = CRGB::Green;
+        leds[(NUM_LEDS - 1) - chaseIndex] = colour;
     }
 
     chaseIndex = (chaseIndex + 1) % NUM_LEDS;
@@ -444,13 +529,22 @@ void setup() {
         return;
     }
 
-    esp_now_register_recv_cb(onDataReceived);
+    if (esp_now_register_recv_cb(onDataReceived) != ESP_OK) {
+        Serial.println("ESP-NOW receive callback registration failed");
+        return;
+    }
 
+    // Without the broadcast peer every esp_now_send() below fails. Unchecked,
+    // the board would chase a confident green arrow while telling nobody
+    // anything - the one failure mode the address-pin check exists to prevent.
     esp_now_peer_info_t peerInfo = {};
     memset(peerInfo.peer_addr, 0xFF, 6);
     peerInfo.channel = WIFI_CHANNEL;
     peerInfo.encrypt = false;
-    esp_now_add_peer(&peerInfo);
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+        Serial.println("ESP-NOW broadcast peer registration failed");
+        return;
+    }
 
     cachedNextHop = solveNextHop(localNodeId);
     meshTable[localNodeId].nextHop = (int8_t)cachedNextHop;
@@ -494,9 +588,10 @@ void runNode() {
         broadcastMeshTable();
     }
 
-    if (millis() - lastLedUpdate > 40) {
+    Urgency urgency = localUrgency();
+    if (millis() - lastLedUpdate > LED_FRAME_MS[urgency]) {
         lastLedUpdate = millis();
-        renderLedAnimation(cachedNextHop);
+        renderLedAnimation(cachedNextHop, urgency);
         FastLED.show();
     }
 }

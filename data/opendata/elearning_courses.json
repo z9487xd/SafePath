@@ -1,0 +1,40 @@
+{
+  "dataset_name": "全民勞教e網課程",
+  "dataset_id": "A17000000J-020052-GZl",
+  "publisher": "勞動部",
+  "source_url": "",
+  "retrieved_at": "",
+  "note": "本專案僅收錄與火災、避難、防爆相關的課程子集。 source_url 與 retrieved_at 須人工查證後填入；留空即代表本檔為離線快取而非即時查詢。",
+  "records": [
+    {
+      "title": "勞工安全與職業傷害預防概論",
+      "desc": "含職業災害發生時的應變與處理",
+      "url": "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10000335"
+    },
+    {
+      "title": "危害辨識及風險評估",
+      "desc": "災害的因果關係、職業災害的模型、機械危害點",
+      "url": "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10001033"
+    },
+    {
+      "title": "機械災害預防",
+      "desc": "切割及捲夾災害危害預防與案例解說",
+      "url": "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10001032"
+    },
+    {
+      "title": "影像式作業人員危害鑑別技術",
+      "desc": "人員異常倒下、危險區域辨別之智能預警應用",
+      "url": "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10001154"
+    },
+    {
+      "title": "看見安全",
+      "desc": "安全的核心價值與交付工作、交付安全的觀念",
+      "url": "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10001031"
+    },
+    {
+      "title": "防爆電器安全",
+      "desc": "防爆電氣設備原理、法規與選用",
+      "url": "https://labor-elearning.mol.gov.tw/co_course_info.php?id=10000859"
+    }
+  ]
+}

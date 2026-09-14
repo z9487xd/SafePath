@@ -33,7 +33,7 @@ NEXT_HOP_TRAPPED = -1
 # Scripted scenario: smoke ramps up at HAZARD_NODE and clears again, so the
 # route change and the colour change can be watched happening at different
 # smoke levels.
-HAZARD_NODE = "N4"
+HAZARD_NODE = "N1"
 CYCLE_SECONDS = 40
 BASELINE_SMOKE = 220
 PEAK_SMOKE = 2600

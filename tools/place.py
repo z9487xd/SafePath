@@ -34,7 +34,7 @@ nodes_data = {
 ADDR_PIN_POOL = [32, 33, 25, 26, 14, 13, 4]
 
 # Corridors are the one thing that cannot be derived from the coordinates: walls
-# are not in the positions. Everything downstream is, though - lengths, the LED
+# are not in the positions. Everything downstream is, though - lengths, the arrow
 # direction matrix, the distance matrix - so move a node freely and the routing
 # follows it. Nothing here is tuned to a particular layout.
 #
@@ -65,6 +65,38 @@ def calculate_edge_weight(p1, p2, positions):
     x1, y1 = positions[p1]["x"], positions[p1]["y"]
     x2, y2 = positions[p2]["x"], positions[p2]["y"]
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+
+# Each junction shows an arrow on an 8x8 matrix laid flat with its top edge
+# towards the top of this map. Eight directions is all 8x8 pixels draw cleanly,
+# so a corridor at any angle is snapped to the nearest 45 degrees:
+#   0 E  1 NE  2 N  3 NW  4 W  5 SW  6 S  7 SE
+# Map y grows downwards, hence the minus sign.
+ARROW_GLYPHS = "→↗↑↖←↙↓↘"
+
+
+def arrow_direction(p1, p2, positions):
+    dx = positions[p2]["x"] - positions[p1]["x"]
+    dy = positions[p2]["y"] - positions[p1]["y"]
+    angle = math.degrees(math.atan2(-dy, dx))
+    return round(angle / 45.0) % 8
+
+
+# Snapping is only harmless while no two corridors out of one board land on the
+# same arrow. If they do, the routing still picks the right corridor and the
+# matrix draws the same picture for both - nothing fails, people just cannot tell.
+def arrow_report(adjacency, sensors):
+    lines, clashes = [], []
+    for k in sensors:
+        by_dir = {}
+        for n in sorted(adjacency[k]):
+            by_dir.setdefault(arrow_direction(k, n, nodes_data), []).append(n)
+        lines.append(f"  {k:<4} " + "  ".join(
+            f"{n} {ARROW_GLYPHS[d]}" for d, ns in sorted(by_dir.items()) for n in ns))
+        for d, ns in by_dir.items():
+            if len(ns) > 1:
+                clashes.append(f"{k}: {', '.join(ns)} all draw {ARROW_GLYPHS[d]}")
+    return lines, clashes
 
 # Must match MESH_MAX_NODES in firmware/shared/mesh_protocol.h. Caught here so
 # the message says what is wrong, instead of a static_assert deep in a C++ build.
@@ -218,11 +250,11 @@ def generate_topology():
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(json_payload, f, indent=2)
 
-    # For the firmware: a distance matrix and a per-corridor LED flow direction
+    # For the firmware: a distance matrix and the arrow each corridor draws
     exit_indices = [idx for k, idx in node_to_idx.items() if nodes_data[k]["type"] == "exit"]
 
     dist_matrix = [["INF" for _ in range(num_nodes)] for _ in range(num_nodes)]
-    dir_matrix = [[" 0" for _ in range(num_nodes)] for _ in range(num_nodes)]
+    dir_matrix = [["-1" for _ in range(num_nodes)] for _ in range(num_nodes)]
 
     for i in range(num_nodes):
         dist_matrix[i][i] = "0.0f"
@@ -235,9 +267,9 @@ def generate_topology():
         dist_matrix[ui][vi] = cost_str
         dist_matrix[vi][ui] = cost_str
 
-        # Direction is not: walking u->v lights the strip the opposite way to v->u
-        dir_matrix[ui][vi] = " 1"
-        dir_matrix[vi][ui] = "-1"
+        # Direction is not: u->v points the opposite way to v->u
+        dir_matrix[ui][vi] = f"{arrow_direction(u, v, nodes_data):2d}"
+        dir_matrix[vi][ui] = f"{arrow_direction(v, u, nodes_data):2d}"
 
     # For the firmware
     header_lines = [
@@ -288,8 +320,10 @@ def generate_topology():
     header_lines.append("};")
     header_lines.append("")
 
-    header_lines.append("// Which way the LED strip should chase. +1 forward, -1 backward, 0 unused.")
-    header_lines.append("const int8_t LED_DIRECTIONS[NUM_NODES][NUM_NODES] = {")
+    header_lines.append("// Arrow drawn on the matrix when walking row -> column. -1 means no corridor.")
+    header_lines.append("// 0 E, 1 NE, 2 N, 3 NW, 4 W, 5 SW, 6 S, 7 SE. N is the top of the map, so")
+    header_lines.append("// every matrix must be mounted flat with its top edge facing the map's top.")
+    header_lines.append("const int8_t ARROW_DIRS[NUM_NODES][NUM_NODES] = {")
     for row in dir_matrix:
         header_lines.append("    { " + ", ".join(row) + " },")
     header_lines.append("};")
@@ -309,6 +343,15 @@ def generate_topology():
               "colours\n         and change no arrow: the site cannot demonstrate dynamic "
               "rerouting.\n         Remove a direct node-to-exit corridor to give a node "
               "a choice.")
+
+    arrow_lines, clashes = arrow_report(adjacency, sensors)
+    print("\nArrows per board:")
+    print("\n".join(arrow_lines))
+    if clashes:
+        print("\nWARNING: corridors that draw the same arrow, people cannot tell them apart:")
+        for c in clashes:
+            print(f"         {c}")
+        print("         Move a node so those corridors leave at least 45 degrees apart.")
 
 if __name__ == "__main__":
     generate_topology()

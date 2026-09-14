@@ -19,7 +19,14 @@
 #include "mesh_protocol.h"
 
 #define LED_PIN 18
-#define NUM_LEDS 16
+// One 8x8 WS2812B matrix per board, laid flat with its top edge towards the top
+// of the site map, so the arrows in topology.h point the right way.
+#define MATRIX_SIZE 8
+#define NUM_LEDS (MATRIX_SIZE * MATRIX_SIZE)
+// How the data line runs through the panel. 0: every row left to right.
+// 1: serpentine, odd rows run right to left. Check the module before trusting
+// any arrow - the wrong value draws a scrambled picture that still lights up.
+#define MATRIX_SERPENTINE 0
 #define SMOKE_SENSOR_PIN 34
 #define DHT_PIN 27
 
@@ -63,7 +70,7 @@ typedef struct {
 
 CRGB leds[NUM_LEDS];
 DHTesp dht;
-uint8_t chaseIndex = 0;
+uint8_t animFrame = 0;
 unsigned long lastDhtRead = 0;
 
 int localNodeId = -1;
@@ -443,45 +450,109 @@ Urgency localUrgency() {
     return URGENCY_CLEAR;
 }
 
-// Frame interval per level. The dot crosses 16 LEDs in 640ms / 400ms / 240ms, so
-// the corridor visibly hurries as it fills. The fade stays put at 60: the tail
-// length is set by the fade alone, not by the frame rate, so the chase keeps the
-// same shape and only gets faster.
+// Frame interval per level. The arrow steps forward every ARROW_STEP_FRAMES
+// frames through ARROW_STEPS positions, so one sweep takes 640ms / 400ms / 240ms
+// and the arrow visibly hurries as the air gets worse. The fade stays put at 60:
+// the tail length is set by the fade alone, so only the speed changes.
 const uint16_t LED_FRAME_MS[3] = { 40, 25, 15 };
+#define ARROW_STEP_FRAMES 4
+#define ARROW_STEPS 4
+
+// Rows top to bottom, bit 7 = leftmost column. Only N and NE are drawn by hand;
+// the other six directions are these two turned in 90 degree steps.
+const uint8_t GLYPH_N[MATRIX_SIZE]  = { 0x00, 0x18, 0x3C, 0x7E, 0xDB, 0x18, 0x18, 0x18 };
+const uint8_t GLYPH_NE[MATRIX_SIZE] = { 0x00, 0x1E, 0x06, 0x0A, 0x12, 0x20, 0x40, 0x00 };
+const uint8_t GLYPH_X[MATRIX_SIZE]  = { 0x81, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42, 0x81 };
+
+// Screen step for each ARROW_DIRS value (0 E, 1 NE ... 7 SE), row grows downward.
+const int8_t DIR_COL_STEP[8] = { 1, 1, 0, -1, -1, -1, 0, 1 };
+const int8_t DIR_ROW_STEP[8] = { 0, -1, -1, -1, 0, 1, 1, 1 };
+
+uint16_t matrixIndex(int row, int col) {
+    if (MATRIX_SERPENTINE && (row & 1)) {
+        col = (MATRIX_SIZE - 1) - col;
+    }
+    return (uint16_t)(row * MATRIX_SIZE + col);
+}
+
+bool glyphPixel(const uint8_t *glyph, int row, int col) {
+    return (glyph[row] >> ((MATRIX_SIZE - 1) - col)) & 1;
+}
+
+// Pixel (row, col) of the arrow for dir. Each quarter turn counter-clockwise
+// takes the picture at (row, col) from (col, SIZE-1-row) of the one before.
+bool arrowPixel(int dir, int row, int col) {
+    const uint8_t *glyph = (dir & 1) ? GLYPH_NE : GLYPH_N;
+    int turns = ((dir & 1) ? (dir - 1) : (dir - 2)) / 2;
+    turns = ((turns % 4) + 4) % 4;
+    for (int t = 0; t < turns; t++) {
+        int srcRow = col;
+        int srcCol = (MATRIX_SIZE - 1) - row;
+        row = srcRow;
+        col = srcCol;
+    }
+    return glyphPixel(glyph, row, col);
+}
+
+void drawArrow(int dir, int offset, CRGB colour) {
+    for (int row = 0; row < MATRIX_SIZE; row++) {
+        for (int col = 0; col < MATRIX_SIZE; col++) {
+            if (!arrowPixel(dir, row, col)) {
+                continue;
+            }
+            int r = row + DIR_ROW_STEP[dir] * offset;
+            int c = col + DIR_COL_STEP[dir] * offset;
+            if (r >= 0 && r < MATRIX_SIZE && c >= 0 && c < MATRIX_SIZE) {
+                leds[matrixIndex(r, c)] = colour;
+            }
+        }
+    }
+}
+
+void drawGlyph(const uint8_t *glyph, CRGB colour) {
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    for (int row = 0; row < MATRIX_SIZE; row++) {
+        for (int col = 0; col < MATRIX_SIZE; col++) {
+            if (glyphPixel(glyph, row, col)) {
+                leds[matrixIndex(row, col)] = colour;
+            }
+        }
+    }
+}
 
 // Not CRGB::Orange: at this brightness a WS2812B renders it green-ish, which is
 // the one thing this colour must never be mistaken for. Tune on the real strip.
 const CRGB LED_CHASE_COLOUR[3] = { CRGB::Green, CRGB(255, 100, 0), CRGB::Red };
 
-// Blinking red across the whole strip when trapped, otherwise a chase running
-// towards nextHop, coloured and paced by how bad it is here.
+// Blinking red X when trapped, otherwise an arrow sliding towards nextHop,
+// coloured and paced by how bad it is here.
 void renderLedAnimation(int nextHop, Urgency urgency) {
     // if (nextHop == NEXT_HOP_SAFE) {
     //     fill_solid(leds, NUM_LEDS, CRGB::Green);
     //     return;
     // }
 
-    if (nextHop == NEXT_HOP_TRAPPED) {
+    // No corridor to nextHop cannot come out of solveNextHop, but an arrow drawn
+    // from a missing entry would point somewhere at random. Say trapped instead.
+    int dir = -1;
+    if (nextHop >= 0 && nextHop < NUM_NODES) {
+        dir = ARROW_DIRS[localNodeId][nextHop];
+    }
+
+    if (nextHop == NEXT_HOP_TRAPPED || dir < 0 || dir > 7) {
         bool blinkState = ((millis() / 250) % 2) == 0;
-        fill_solid(leds, NUM_LEDS, blinkState ? CRGB::Red : CRGB::Black);
+        drawGlyph(GLYPH_X, blinkState ? CRGB::Red : CRGB::Black);
         return;
     }
 
     fadeToBlackBy(leds, NUM_LEDS, 60);
 
-    int8_t dir = 1;
-    if (nextHop >= 0 && nextHop < NUM_NODES) {
-        dir = LED_DIRECTIONS[localNodeId][nextHop];
-    }
+    // Starts two steps behind centre and ends one step past it, so the arrow
+    // travels the way it points.
+    int step = (animFrame / ARROW_STEP_FRAMES) % ARROW_STEPS;
+    drawArrow(dir, step - 2, LED_CHASE_COLOUR[urgency]);
 
-    CRGB colour = LED_CHASE_COLOUR[urgency];
-    if (dir >= 0) {
-        leds[chaseIndex] = colour;
-    } else {
-        leds[(NUM_LEDS - 1) - chaseIndex] = colour;
-    }
-
-    chaseIndex = (chaseIndex + 1) % NUM_LEDS;
+    animFrame = (animFrame + 1) % (ARROW_STEP_FRAMES * ARROW_STEPS);
 }
 
 void setup() {

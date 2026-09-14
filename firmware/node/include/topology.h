@@ -36,14 +36,16 @@ const float BASE_GRAPH[NUM_NODES][NUM_NODES] = {
     { INF, INF, INF, 100.0f, INF, 0.0f },
 };
 
-// Which way the LED strip should chase. +1 forward, -1 backward, 0 unused.
-const int8_t LED_DIRECTIONS[NUM_NODES][NUM_NODES] = {
-    {  0,  1,  0,  0,  0,  0 },
-    { -1,  0,  1,  0, -1,  0 },
-    {  0, -1,  0,  1,  1,  0 },
-    {  0,  0, -1,  0,  1, -1 },
-    {  0,  1, -1, -1,  0,  0 },
-    {  0,  0,  0,  1,  0,  0 },
+// Arrow drawn on the matrix when walking row -> column. -1 means no corridor.
+// 0 E, 1 NE, 2 N, 3 NW, 4 W, 5 SW, 6 S, 7 SE. N is the top of the map, so
+// every matrix must be mounted flat with its top edge facing the map's top.
+const int8_t ARROW_DIRS[NUM_NODES][NUM_NODES] = {
+    { -1,  0, -1, -1, -1, -1 },
+    {  4, -1,  0, -1,  6, -1 },
+    { -1,  4, -1,  6,  5, -1 },
+    { -1, -1,  2, -1,  4,  0 },
+    { -1,  2,  1,  0, -1, -1 },
+    { -1, -1, -1,  4, -1, -1 },
 };
 
 #endif

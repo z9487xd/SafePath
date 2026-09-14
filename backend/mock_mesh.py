@@ -13,6 +13,7 @@ firmware's cost model line for line:
 It replaces the serial port and nothing above it: the lines it emits are
 identical to what firmware/gateway prints, so ingest_pipeline in app.py has no
 branch for mock versus real hardware.
+core is solve_next_hop(), which is the same Dijkstra and back-walk as in the firmware.
 """
 
 import json
@@ -26,7 +27,7 @@ TEMP_CLEAN = 40.0
 TEMP_BLOCK = 60.0
 HAZARD_GAIN = 2.0
 
-NEXT_HOP_SAFE = -2
+NEXT_HOP_SAFE = -2 
 NEXT_HOP_TRAPPED = -1
 
 # Scripted scenario: smoke ramps up at HAZARD_NODE and clears again, so the
@@ -68,6 +69,7 @@ class VirtualMesh:
             self.base[vi][ui] = cost
             self.adjacency[u].append(v)
             self.adjacency[v].append(u)
+        
 
         if HAZARD_NODE not in self.sensors:
             raise ValueError(f"HAZARD_NODE {HAZARD_NODE!r} is not a sensor node in this map")
@@ -90,12 +92,14 @@ class VirtualMesh:
                     queue.append(neighbor)
         return {nid: max(0, depth.get(nid, 1) - 1) for nid in self.ids}
 
-    @staticmethod
+    @staticmethod#獨立函式
     def _band(value: float, clean: float, block: float) -> float:
         if value >= block:
             return INF
         if value <= clean:
             return 1.0
+        ## 處於危險緩衝區間：依比例加成 1.0 到 3.0 倍
+        #1.0+2.0*(value-clean)/(block-clean)
         return 1.0 + HAZARD_GAIN * (value - clean) / (block - clean)
 
     # Cost multiplier for entering a node. INF means do not go there.
@@ -103,7 +107,7 @@ class VirtualMesh:
         return max(self._band(self.smoke[node_id], SMOKE_CLEAN, SMOKE_THRESHOLD),
                    self._band(self.temp[node_id], TEMP_CLEAN, TEMP_BLOCK))
 
-    def _edge_cost(self, ui: int, vi: int) -> float:
+    def _edge_cost(self, ui: int, vi: int) -> float:#計算邊的成本
         base = self.base[ui][vi]
         if base >= INF:
             return INF
@@ -125,7 +129,7 @@ class VirtualMesh:
         visited = [False] * size
         parent = [-1] * size
         dist[start] = 0.0
-
+        #dijkstra
         for _ in range(size - 1):
             best = -1
             best_dist = INF
@@ -136,7 +140,7 @@ class VirtualMesh:
             if best == -1:
                 break
             visited[best] = True
-
+            
             for v in range(size):
                 if visited[v]:
                     continue
@@ -144,7 +148,7 @@ class VirtualMesh:
                 if cost < INF and dist[best] + cost < dist[v]:
                     dist[v] = dist[best] + cost
                     parent[v] = best
-
+        #找到最短路徑的出口節點
         best_exit = -1
         min_exit_dist = INF
         for exit_id in self.exits:
@@ -157,7 +161,7 @@ class VirtualMesh:
 
         if best_exit == -1 or min_exit_dist >= INF:
             return NEXT_HOP_TRAPPED
-
+        #回溯找到從起點到出口的第一個節點
         current = best_exit
         for _ in range(size):
             if parent[current] == -1 or parent[current] == start:
@@ -195,7 +199,7 @@ class VirtualMesh:
                 1.0, max(0.0, (smoke - BASELINE_SMOKE) / (PEAK_SMOKE - BASELINE_SMOKE)))
             self.temp[node_id] = round(BASELINE_TEMP + (PEAK_TEMP - BASELINE_TEMP) * ramp, 1)
             self.humidity[node_id] = int(BASELINE_HUMIDITY + (PEAK_HUMIDITY - BASELINE_HUMIDITY) * ramp)
-
+        #打包成json格式的字串，模擬網路傳輸
         lines = []
         for node_id in self.sensors:
             lines.append(json.dumps({
@@ -211,6 +215,7 @@ class VirtualMesh:
 
 # Everything below is a diagnostic, not part of the running system.
 # Run `python3 backend/mock_mesh.py` after editing tools/place.py.
+#不用看，檢查路徑變化的測試程式碼 跟place.py差不多
 def route_report(mesh: "VirtualMesh") -> List[str]:
     """How much smoke it takes to move each node's route, for this topology.
 

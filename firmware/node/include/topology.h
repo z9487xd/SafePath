@@ -28,22 +28,22 @@ const uint8_t ADDR_PINS[ADDR_PIN_COUNT] = { 32, 33, 25 };
 
 // Corridor lengths in map units. INF means no corridor.
 const float BASE_GRAPH[NUM_NODES][NUM_NODES] = {
-    { 0.0f, INF, INF, 220.2f, 107.7f, INF },
-    { INF, 0.0f, 208.8f, INF, 300.0f, 430.8f },
-    { INF, 208.8f, 0.0f, 156.5f, 116.6f, 223.6f },
-    { 220.2f, INF, 156.5f, 0.0f, 136.0f, INF },
-    { 107.7f, 300.0f, 116.6f, 136.0f, 0.0f, INF },
-    { INF, 430.8f, 223.6f, INF, INF, 0.0f },
+    { 0.0f, 100.0f, INF, INF, INF, INF },
+    { 100.0f, 0.0f, 100.0f, INF, 150.0f, INF },
+    { INF, 100.0f, 0.0f, 150.0f, 180.3f, INF },
+    { INF, INF, 150.0f, 0.0f, 100.0f, 100.0f },
+    { INF, 150.0f, 180.3f, 100.0f, 0.0f, INF },
+    { INF, INF, INF, 100.0f, INF, 0.0f },
 };
 
 // Which way the LED strip should chase. +1 forward, -1 backward, 0 unused.
 const int8_t LED_DIRECTIONS[NUM_NODES][NUM_NODES] = {
-    {  0,  0,  0,  1,  1,  0 },
-    {  0,  0,  1,  0, -1,  1 },
-    {  0, -1,  0,  1, -1,  1 },
-    { -1,  0, -1,  0,  1,  0 },
-    { -1,  1,  1, -1,  0,  0 },
-    {  0, -1, -1,  0,  0,  0 },
+    {  0,  1,  0,  0,  0,  0 },
+    { -1,  0,  1,  0, -1,  0 },
+    {  0, -1,  0,  1,  1,  0 },
+    {  0,  0, -1,  0,  1, -1 },
+    {  0,  1, -1, -1,  0,  0 },
+    {  0,  0,  0,  1,  0,  0 },
 };
 
 #endif

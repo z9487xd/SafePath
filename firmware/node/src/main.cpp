@@ -37,7 +37,7 @@
 // close a corridor. Both pairs need calibrating against the real site.
 #define SMOKE_CLEAN 800
 #define SMOKE_THRESHOLD 2000
-#define TEMP_CLEAN_DECIC 400
+#define TEMP_CLEAN_DECIC 400 // 40.0C
 #define TEMP_BLOCK_DECIC 600
 #define HAZARD_GAIN 2.0f
 #define SENSOR_WARMUP_MS 5000
@@ -45,7 +45,7 @@
 // neighbour is treated as impassable.
 #define MESH_SETTLE_MS 1000
 #define NODE_TIMEOUT_MS 6000
-#define RX_QUEUE_DEPTH 8
+#define RX_QUEUE_DEPTH 8 //這是 queue.h裡面定義的QueueHandle_t的大小，這個queue是用來接收esp-now的資料包的
 
 static_assert(NUM_NODES <= MESH_MAX_NODES, "NUM_NODES exceeds mesh record capacity");
 
@@ -105,27 +105,28 @@ bool isExitNode(int node) {
 // An unwired board reads 0, and an out-of-range or exit value cannot be a board
 // position either. All of those refuse to run rather than guess, because the
 // wrong number makes every arrow point the wrong way while looking normal.
+// 算自己的node id，這個id是用來辨識自己是哪一個node，這個id是透過讀取ADDR_PINS陣列裡面的腳位來決定的，這些腳位是用來接地的，接地代表1，沒接地代表0，這樣就可以用二進位的方式來表示node id。
 int resolveLocalNodeId() {
+    int id = 0;
 #ifdef FORCE_NODE_ID
-    return FORCE_NODE_ID;
+    id = FORCE_NODE_ID;
 #else
     for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
         pinMode(ADDR_PINS[bit], INPUT_PULLUP);
     }
     delay(5);
 
-    int id = 0;
     for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
         if (digitalRead(ADDR_PINS[bit]) == LOW) {
             id |= (1 << bit);
         }
     }
+#endif
 
-    if (id >= NUM_NODES || isExitNode(id)) {
+    if (id < 0 || id >= NUM_NODES || isExitNode(id)) {
         return -1;
     }
     return id;
-#endif
 }
 
 // Slow blink plus a repeated serial line, for the two states where this board
@@ -149,7 +150,7 @@ void showStandby(CRGB colour, const char *key) {
     }
 }
 
-bool isNodeStale(int node) {
+bool isNodeStale(int node) {//判斷node是否已經超過NODE_TIMEOUT_MS毫秒沒有收到資料包
     return !meshTable[node].everSeen || (millis() - meshTable[node].lastSeen > NODE_TIMEOUT_MS);
 }
 
@@ -160,6 +161,7 @@ void onDataReceived(const esp_now_recv_info_t *info, const uint8_t *incomingData
 #else
 void onDataReceived(const uint8_t *mac, const uint8_t *incomingData, int len) {
 #endif
+    //篩選資料包，檢查資料包的長度是否符合MeshPacket的大小，如果不符合就直接return
     if (len < (int)MESH_HEADER_SIZE || len > (int)sizeof(MeshPacket)) {
         return;
     }
@@ -178,7 +180,8 @@ void onDataReceived(const uint8_t *mac, const uint8_t *incomingData, int len) {
 }
 
 void mergeRecord(const MeshRecord &rec) {
-    if (rec.originId >= NUM_NODES || rec.originId == localNodeId) {
+    // 篩選資料，檢查資料是否有效
+    if (rec.originId >= NUM_NODES || rec.originId == localNodeId || isExitNode(rec.originId)) {
         return;
     }
     if (rec.hops >= MESH_MAX_HOPS) {
@@ -203,7 +206,7 @@ void mergeRecord(const MeshRecord &rec) {
     slot.everSeen = true;
 }
 
-void drainRxQueue() {
+void drainRxQueue() {//從queue裡面取出資料包，並且把資料包裡面的每一個record都merge到meshTable裡面
     MeshPacket packet;
     while (xQueueReceive(rxQueue, &packet, 0) == pdTRUE) {
         for (uint8_t i = 0; i < packet.recordCount; i++) {
@@ -229,6 +232,9 @@ void broadcastMeshTable() {
         // seconds inviting its neighbours to route people into it. Staying quiet
         // leaves them on the last reading they had, which then ages out to INF on
         // its own. No data is allowed to mean safe anywhere else here either.
+        if (isExitNode(i)) {
+            continue;
+        }
         if (i == localNodeId && warmingUp) {
             continue;
         }
@@ -248,7 +254,7 @@ void broadcastMeshTable() {
 
     uint8_t broadcastMac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     esp_err_t sent = esp_now_send(broadcastMac, (uint8_t *)&packet,
-                                  meshPacketSize(packet.recordCount));
+                                  meshPacketSize(packet.recordCount));//發射
 
     // A node that cannot transmit is not dangerous: its neighbours stop hearing
     // it, mark it stale and route around it, which is the fail-safe doing its
@@ -296,7 +302,10 @@ float bandFactor(float value, float clean, float block) {
 
 // Cost multiplier for entering a node. INF means do not go there.
 float hazardFactor(int node) {
-    if (node != localNodeId && !isExitNode(node)) {
+    if (isExitNode(node)) {
+        return 1.0f;
+    }
+    if (node != localNodeId) {
         // Nobody transmits their own reading until warm, so at the instant the
         // warm-up ends every neighbour is still unheard-from. Without the extra
         // second that lands as one blink of "trapped" on every strip at power-on,
@@ -318,11 +327,11 @@ float hazardFactor(int node) {
         byTemp = bandFactor((float)meshTable[node].temp, TEMP_CLEAN_DECIC, TEMP_BLOCK_DECIC);
     }
 
-    return (byTemp > bySmoke) ? byTemp : bySmoke;
+    return (byTemp > bySmoke) ? byTemp : bySmoke;//取max
 }
 
 // Physical distance scaled by how dangerous the destination is.
-float edgeCost(int u, int v) {
+float edgeCost(int u, int v) {//鄰近節點的成本計算，u是起點，v是終點，成本是由兩個因素決定的，一個是u到v的距離，另一個是v的危險程度，危險程度越高，成本越高
     float base = BASE_GRAPH[u][v];
     if (base >= INF) {
         return INF;
@@ -339,10 +348,6 @@ float edgeCost(int u, int v) {
 // Dijkstra to the cheapest reachable exit.
 // Returns the adjacent node to walk to, or NEXT_HOP_SAFE / NEXT_HOP_TRAPPED.
 int solveNextHop(int startNode) {
-    if (isExitNode(startNode) && meshTable[startNode].smoke < SMOKE_THRESHOLD) {
-        return NEXT_HOP_SAFE;
-    }
-
     float dist[NUM_NODES];
     bool visited[NUM_NODES];
     int parent[NUM_NODES];
@@ -354,10 +359,10 @@ int solveNextHop(int startNode) {
     }
     dist[startNode] = 0.0f;
 
-    for (int count = 0; count < NUM_NODES - 1; count++) {
+    for (int count = 0; count < NUM_NODES - 1; count++) {//Dijkstra演算法的主要迴圈，會跑NUM_NODES-1次，每次找出最短距離的節點，並更新其鄰居的距離
         float minDist = INF;
         int u = -1;
-        for (int v = 0; v < NUM_NODES; v++) {
+        for (int v = 0; v < NUM_NODES; v++) {   
             if (!visited[v] && dist[v] < minDist) {
                 minDist = dist[v];
                 u = v;
@@ -398,6 +403,7 @@ int solveNextHop(int startNode) {
         return NEXT_HOP_TRAPPED;
     }
 
+    //倒著寫
     int curr = bestExit;
     int hops = 0;
     while (parent[curr] != -1 && parent[curr] != startNode && hops < NUM_NODES) {
@@ -450,10 +456,10 @@ const CRGB LED_CHASE_COLOUR[3] = { CRGB::Green, CRGB(255, 100, 0), CRGB::Red };
 // Blinking red across the whole strip when trapped, otherwise a chase running
 // towards nextHop, coloured and paced by how bad it is here.
 void renderLedAnimation(int nextHop, Urgency urgency) {
-    if (nextHop == NEXT_HOP_SAFE) {
-        fill_solid(leds, NUM_LEDS, CRGB::Green);
-        return;
-    }
+    // if (nextHop == NEXT_HOP_SAFE) {
+    //     fill_solid(leds, NUM_LEDS, CRGB::Green);
+    //     return;
+    // }
 
     if (nextHop == NEXT_HOP_TRAPPED) {
         bool blinkState = ((millis() / 250) % 2) == 0;
@@ -501,7 +507,7 @@ void setup() {
     char bootMsg[64];
     snprintf(bootMsg, sizeof(bootMsg), "{\"boot_node_id\":%d,\"mac\":\"%s\"}", localNodeId, macText);
     Serial.println(bootMsg);
-
+    
     for (int i = 0; i < NUM_NODES; i++) {
         meshTable[i].smoke = 0;
         meshTable[i].temp = TEMP_UNKNOWN;
@@ -513,13 +519,13 @@ void setup() {
         meshTable[i].everSeen = false;
     }
     meshTable[localNodeId].everSeen = true;
-
+    //建立一個queue，這個queue是用來接收esp-now的資料包的，這個queue的大小是RX_QUEUE_DEPTH，這個queue的元素大小是MeshPacket
     rxQueue = xQueueCreate(RX_QUEUE_DEPTH, sizeof(MeshPacket));
     if (rxQueue == NULL) {
         Serial.println("RX queue creation failed");
         return;
     }
-
+    // 設定WiFi為promiscuous模式，並設定頻道為WIFI_CHANNEL，然後再關閉promiscuous模式
     esp_wifi_set_promiscuous(true);
     esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
     esp_wifi_set_promiscuous(false);
@@ -537,6 +543,7 @@ void setup() {
     // Without the broadcast peer every esp_now_send() below fails. Unchecked,
     // the board would chase a confident green arrow while telling nobody
     // anything - the one failure mode the address-pin check exists to prevent.
+    //註冊一個ESP-NOW的peer，這個peer是用來接收廣播的資料包的，這個peer的MAC地址是FF:FF:FF:FF:FF:FF，這個peer的頻道是WIFI_CHANNEL，這個peer不加密
     esp_now_peer_info_t peerInfo = {};
     memset(peerInfo.peer_addr, 0xFF, 6);
     peerInfo.channel = WIFI_CHANNEL;
@@ -545,7 +552,7 @@ void setup() {
         Serial.println("ESP-NOW broadcast peer registration failed");
         return;
     }
-
+    //計算出下一個跳點，並且把下一個跳點存到meshTable裡面
     cachedNextHop = solveNextHop(localNodeId);
     meshTable[localNodeId].nextHop = (int8_t)cachedNextHop;
     meshReady = true;

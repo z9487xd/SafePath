@@ -13,12 +13,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define MESH_MAGIC 0x5A
+#define MESH_MAGIC 0x5A// The first byte of every packet, to detect misaligned or corrupted data.
 #define MESH_MAX_NODES 24
 #define MESH_MAX_HOPS 8
 
 // Sentinels for a sensor that did not answer this round. Missing data must be
-// distinguishable from a real reading of zero.
+// distinguishable from a real reading of zero.-32768C are outside the range of the sensors, and 255% humidity is impossible.
 #define TEMP_UNKNOWN INT16_MIN
 #define HUMIDITY_UNKNOWN 0xFF
 
@@ -30,7 +30,7 @@ typedef struct __attribute__((packed)) {
     uint8_t  originId;
     uint16_t seq;
     uint16_t smokeLevel;
-    int16_t  tempDeciC;     // tenths of a degree, so no float on the wire
+    int16_t  tempDeciC;     // temperature * 10
     uint8_t  humidityPct;
     int8_t   nextHop;
     uint8_t  hops;

@@ -3,91 +3,81 @@
     {
       "id": "EX1",
       "index": 0,
-      "x": 300,
-      "y": 300,
+      "x": 50,
+      "y": 100,
       "type": "exit"
     },
     {
       "id": "N1",
       "index": 1,
-      "x": 260,
-      "y": 500,
+      "x": 150,
+      "y": 100,
       "type": "node"
     },
     {
       "id": "N2",
       "index": 2,
-      "x": 200,
-      "y": 300,
+      "x": 250,
+      "y": 100,
       "type": "node"
     },
     {
       "id": "N3",
       "index": 3,
-      "x": 130,
-      "y": 160,
+      "x": 250,
+      "y": 250,
       "type": "node"
     },
     {
       "id": "N4",
       "index": 4,
-      "x": 260,
-      "y": 200,
+      "x": 150,
+      "y": 250,
       "type": "node"
     },
     {
       "id": "EX2",
       "index": 5,
-      "x": 100,
-      "y": 100,
+      "x": 350,
+      "y": 250,
       "type": "exit"
     }
   ],
   "edges": [
     {
       "source": "EX1",
-      "target": "N4",
-      "cost": 107.7
+      "target": "N1",
+      "cost": 100.0
     },
     {
-      "source": "EX1",
+      "source": "EX2",
       "target": "N3",
-      "cost": 220.23
+      "cost": 100.0
+    },
+    {
+      "source": "N1",
+      "target": "N2",
+      "cost": 100.0
+    },
+    {
+      "source": "N2",
+      "target": "N3",
+      "cost": 150.0
     },
     {
       "source": "N3",
       "target": "N4",
-      "cost": 136.01
-    },
-    {
-      "source": "N2",
-      "target": "N3",
-      "cost": 156.52
-    },
-    {
-      "source": "N1",
-      "target": "N2",
-      "cost": 208.81
-    },
-    {
-      "source": "N2",
-      "target": "EX2",
-      "cost": 223.61
-    },
-    {
-      "source": "N1",
-      "target": "EX2",
-      "cost": 430.81
-    },
-    {
-      "source": "N4",
-      "target": "N2",
-      "cost": 116.62
+      "cost": 100.0
     },
     {
       "source": "N4",
       "target": "N1",
-      "cost": 300.0
+      "cost": 150.0
+    },
+    {
+      "source": "N2",
+      "target": "N4",
+      "cost": 180.28
     }
   ]
 }

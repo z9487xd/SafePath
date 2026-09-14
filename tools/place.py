@@ -17,13 +17,15 @@ import math
 # ID_N1 = 1, ...), so reordering these lines renumbers every board and changes
 # which address jumpers each board needs.
 nodes_data = {
-    "EX1": {"x": 300, "y": 300, "type": "exit"},
-    "N1":  {"x": 260, "y": 500, "type": "node"},
-    "N2":  {"x": 200, "y": 300, "type": "node"},
-    "N3":  {"x": 130, "y": 160, "type": "node"},
-    "N4":  {"x": 260, "y": 200, "type": "node"},
-    "EX2": {"x": 100, "y": 100, "type": "exit"}
+    "EX1": {"x": 50,  "y": 100, "type": "exit"},
+    "N1":  {"x": 150, "y": 100, "type": "node"},
+    "N2":  {"x": 250, "y": 100, "type": "node"},
+    "N3":  {"x": 250, "y": 250, "type": "node"},
+    "N4":  {"x": 150, "y": 250, "type": "node"},
+    "EX2": {"x": 350, "y": 250, "type": "exit"}
 }
+
+
 
 
 # Free GPIOs used to encode the node number in binary. Avoids the LED, sensor
@@ -45,15 +47,18 @@ ADDR_PIN_POOL = [32, 33, 25, 26, 14, 13, 4]
 # reroute_report() prints who those are and by what margin on every run, so
 # moving anything tells you immediately what it cost.
 raw_edges = [
-    ("EX1", "N4"),
-    ("EX1", "N3"),
-    ("N3",  "N4"),
-    ("N2",  "N3"),
-    ("N1",  "N2"),
-    ("N2",  "EX2"),
-    ("N1",  "EX2"),
-    ("N4",  "N2"),
-    ("N4",  "N1")
+    # Exit connections: EX1 connects only to N1, EX2 connects only to N3
+    ("EX1", "N1"),
+    ("EX2", "N3"),
+
+    # Inner mesh ring: N1 - N2 - N3 - N4 - N1
+    ("N1", "N2"),
+    ("N2", "N3"),
+    ("N3", "N4"),
+    ("N4", "N1"),
+
+    # Cross diagonal to provide multiple routing choices
+    ("N2", "N4")
 ]
 
 def calculate_edge_weight(p1, p2, positions):

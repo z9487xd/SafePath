@@ -100,7 +100,7 @@ def load_osha_rules():
 
 load_osha_rules()
 
-node_name_lookup = {}
+node_name_lookup = {}#查表
 if os.path.exists(model_path):
     with open(model_path, "r", encoding="utf-8") as f:
         try:
@@ -129,7 +129,7 @@ class ConnectionManager:
 
     # A new dashboard is registered only after its first frame is away, so the
     # publisher cannot interleave a broadcast into the same socket mid-handshake.
-    #  async是一個關鍵字，用於定義異步函數。異步函數允許在等待I/O操作完成時不阻塞事件循環，從而提高應用程序的性能和響應能力。在這段代碼中，connect方法被定義為異步函數，這意味著它可以使用await關鍵字來等待其他異步操作完成，而不會阻塞整個應用程序的執行。
+    # async是一個關鍵字，用於定義異步函數。異步函數允許在等待I/O操作完成時不阻塞事件循環，從而提高應用程序的性能和響應能力。在這段代碼中，connect方法被定義為異步函數，這意味著它可以使用await關鍵字來等待其他異步操作完成，而不會阻塞整個應用程序的執行。
     async def connect(self, websocket: WebSocket, initial: Optional[str] = None):
         await websocket.accept()
         async with self.send_lock:
@@ -338,7 +338,7 @@ def mock_serial_worker():
 
 def real_serial_worker():
     ser = None
-    while True:
+    while True:#不斷取得資料
         try:
             if ser is None:
                 port = auto_detect_serial_port()

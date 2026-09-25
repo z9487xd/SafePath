@@ -16,14 +16,6 @@ import math
 # Dictionary order defines the node numbering used by the firmware (ID_EX1 = 0,
 # ID_N1 = 1, ...), so reordering these lines renumbers every board and changes
 # which address jumpers each board needs.
-nodes_data = {
-    "EX1": {"x": 50,  "y": 100, "type": "exit"},
-    "N1":  {"x": 150, "y": 100, "type": "node"},
-    "N2":  {"x": 250, "y": 100, "type": "node"},
-    "N3":  {"x": 250, "y": 250, "type": "node"},
-    "N4":  {"x": 150, "y": 250, "type": "node"},
-    "EX2": {"x": 350, "y": 250, "type": "exit"}
-}
 
 
 
@@ -31,35 +23,51 @@ nodes_data = {
 # Free GPIOs used to encode the node number in binary. Avoids the LED, sensor
 # and boot-strapping pins. N pins address 2^N - 1 nodes, so this list supports
 # far more nodes than it has entries.
-ADDR_PIN_POOL = [32, 33, 25, 26, 14, 13, 4]
-
-# Corridors are the one thing that cannot be derived from the coordinates: walls
-# are not in the positions. Everything downstream is, though - lengths, the arrow
-# direction matrix, the distance matrix - so move a node freely and the routing
-# follows it. Nothing here is tuned to a particular layout.
+ADDR_PIN_POOL = [32, 33, 25, 26, 14, 4]
+# 初賽 4 節點版（2026-09-25）。離出口最近的節點永遠直走出口不會轉向，
+# 所以 4 節點最多 3 個會轉向，這個形狀達到上限：
 #
-# One property is worth watching while editing, and it is a property of the map,
-# not of the algorithm: a node whose shortest way out is a direct edge to an exit
-# has no decision to make. Weighting only ever raises a cost and an exit carries
-# no sensor, so that edge keeps its plain length and always wins - which is the
-# right answer, the node is standing at the door. But it means dynamic rerouting
-# only ever shows up at nodes that reach an exit *through another sensor node*.
-# reroute_report() prints who those are and by what margin on every run, so
-# moving anything tells you immediately what it cost.
+#   N3 ─── N2 ─── N4
+#     ╲    │      │
+#       ╲  │      │  EX2 走廊故意拉長到 350，
+#   EX1 ── N1     │  讓 N4 平常走左邊（300），N1/N2 冒煙約 1160 就改走 EX2
+#                 │
+#                EX2
+#
+# 煙越濃轉的越多：N1 smoke≈1160 → N4 ←變↓；N1 封死 → N2 ↓變→、N3 ↘變→。
+# 兩板測試 bench_n1n2 仍可用：N1 封死（≥2000）時 N2 轉向。
+nodes_data = {
+    "EX1": {"x": 100, "y": 200, "type": "exit"},
+    "N1":  {"x": 200, "y": 200, "type": "node"},
+    "N2":  {"x": 200, "y": 100, "type": "node"},
+    "N3":  {"x": 100, "y": 100, "type": "node"},
+    "N4":  {"x": 300, "y": 100, "type": "node"},
+    "EX2": {"x": 300, "y": 450, "type": "exit"},
+}
+
 raw_edges = [
-    # Exit connections: EX1 connects only to N1, EX2 connects only to N3
     ("EX1", "N1"),
-    ("EX2", "N3"),
-
-    # Inner mesh ring: N1 - N2 - N3 - N4 - N1
+    ("EX2", "N4"),
     ("N1", "N2"),
+    ("N1", "N3"),
     ("N2", "N3"),
-    ("N3", "N4"),
-    ("N4", "N1"),
-
-    # Cross diagonal to provide multiple routing choices
-    ("N2", "N4")
+    ("N2", "N4"),
 ]
+
+# 決賽 5 節點版，進決賽時把上面兩段換回這個：
+# nodes_data = {
+#     "EX1": {"x": 50,  "y": 100, "type": "exit"},
+#     "N1":  {"x": 150, "y": 100, "type": "node"},
+#     "N2":  {"x": 250, "y": 100, "type": "node"},
+#     "N3":  {"x": 350, "y": 100, "type": "node"},
+#     "N4":  {"x": 350, "y": 200, "type": "node"},
+#     "N5":  {"x": 250, "y": 200, "type": "node"},
+#     "EX2": {"x": 450, "y": 200, "type": "exit"},
+# }
+# raw_edges = [
+#     ("EX1", "N1"), ("EX2", "N4"), ("N1", "N2"), ("N2", "N3"),
+#     ("N1", "N5"), ("N2", "N5"), ("N3", "N5"), ("N4", "N5"),
+# ]
 
 def calculate_edge_weight(p1, p2, positions):
     x1, y1 = positions[p1]["x"], positions[p1]["y"]

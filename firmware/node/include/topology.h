@@ -29,11 +29,11 @@ const uint8_t ADDR_PINS[ADDR_PIN_COUNT] = { 32, 33, 25 };
 // Corridor lengths in map units. INF means no corridor.
 const float BASE_GRAPH[NUM_NODES][NUM_NODES] = {
     { 0.0f, 100.0f, INF, INF, INF, INF },
-    { 100.0f, 0.0f, 100.0f, INF, 150.0f, INF },
-    { INF, 100.0f, 0.0f, 150.0f, 180.3f, INF },
-    { INF, INF, 150.0f, 0.0f, 100.0f, 100.0f },
-    { INF, 150.0f, 180.3f, 100.0f, 0.0f, INF },
-    { INF, INF, INF, 100.0f, INF, 0.0f },
+    { 100.0f, 0.0f, 100.0f, 141.4f, INF, INF },
+    { INF, 100.0f, 0.0f, 100.0f, 100.0f, INF },
+    { INF, 141.4f, 100.0f, 0.0f, INF, INF },
+    { INF, INF, 100.0f, INF, 0.0f, 350.0f },
+    { INF, INF, INF, INF, 350.0f, 0.0f },
 };
 
 // Arrow drawn on the matrix when walking row -> column. -1 means no corridor.
@@ -41,11 +41,11 @@ const float BASE_GRAPH[NUM_NODES][NUM_NODES] = {
 // every matrix must be mounted flat with its top edge facing the map's top.
 const int8_t ARROW_DIRS[NUM_NODES][NUM_NODES] = {
     { -1,  0, -1, -1, -1, -1 },
-    {  4, -1,  0, -1,  6, -1 },
-    { -1,  4, -1,  6,  5, -1 },
-    { -1, -1,  2, -1,  4,  0 },
-    { -1,  2,  1,  0, -1, -1 },
-    { -1, -1, -1,  4, -1, -1 },
+    {  4, -1,  2,  3, -1, -1 },
+    { -1,  6, -1,  4,  0, -1 },
+    { -1,  7,  0, -1, -1, -1 },
+    { -1, -1,  4, -1, -1,  6 },
+    { -1, -1, -1, -1,  2, -1 },
 };
 
 #endif

@@ -4,7 +4,7 @@
 // ESP-NOW, and runs Dijkstra locally to choose the next hop toward an exit.
 // The LED strip shows that direction. No server is involved, so the mesh keeps
 // working with mains power and internet down.
-//
+//pio run -t upload -e bench_n1n2
 // Every board runs this same binary. A board learns which node it is by reading
 // its address pins, so nothing is configured per board in software.
 // topology.h lists which pins each node needs tied to GND.
@@ -18,7 +18,7 @@
 #include "topology.h"
 #include "mesh_protocol.h"
 
-#define LED_PIN 18
+#define LED_PIN 13
 // One 8x8 WS2812B matrix per board, laid flat with its top edge towards the top
 // of the site map, so the arrows in topology.h point the right way.
 #define MATRIX_SIZE 8
@@ -128,6 +128,13 @@ int resolveLocalNodeId() {
             id |= (1 << bit);
         }
     }
+    // 開機印一次每支位址腳讀到的值（1 = 有接地），跳線接觸不良時看這行就知道是哪支
+    Serial.print("{\"addr_pins\":{");
+    for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
+        Serial.printf("%s\"GPIO%d\":%d", bit ? "," : "", ADDR_PINS[bit],
+                      digitalRead(ADDR_PINS[bit]) == LOW);
+    }
+    Serial.printf("},\"id\":%d}\n", id);
 #endif
 
     if (id < 0 || id >= NUM_NODES || isExitNode(id)) {
@@ -312,6 +319,14 @@ float hazardFactor(int node) {
     if (isExitNode(node)) {
         return 1.0f;
     }
+#ifdef BENCH_LIVE_MASK
+    // 桌上測試：只有 mask 裡的節點是實體板子，其餘當成空氣乾淨的走廊，
+    // 否則沒接的節點會被故障保護判成 INF，兩片板子永遠只有一條路、看不到轉向。
+    // 實體板子仍保留失聯即 INF 的保護。正式燒錄不要開。
+    if (!((BENCH_LIVE_MASK >> node) & 1)) {
+        return 1.0f;
+    }
+#endif
     if (node != localNodeId) {
         // Nobody transmits their own reading until warm, so at the instant the
         // warm-up ends every neighbour is still unheard-from. Without the extra
@@ -467,7 +482,7 @@ const uint8_t GLYPH_X[MATRIX_SIZE]  = { 0x81, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42
 // Screen step for each ARROW_DIRS value (0 E, 1 NE ... 7 SE), row grows downward.
 const int8_t DIR_COL_STEP[8] = { 1, 1, 0, -1, -1, -1, 0, 1 };
 const int8_t DIR_ROW_STEP[8] = { 0, -1, -1, -1, 0, 1, 1, 1 };
-
+//二維轉一
 uint16_t matrixIndex(int row, int col) {
     if (MATRIX_SERPENTINE && (row & 1)) {
         col = (MATRIX_SIZE - 1) - col;
@@ -561,7 +576,7 @@ void setup() {
     pinMode(SMOKE_SENSOR_PIN, INPUT);
 
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-    FastLED.setBrightness(120);
+    FastLED.setBrightness(10);
     dht.setup(DHT_PIN, DHTesp::DHT22);
 
     WiFi.mode(WIFI_STA);
@@ -659,6 +674,25 @@ void runNode() {
         meshTable[localNodeId].nextHop = (int8_t)cachedNextHop;
     }
 
+#ifdef BENCH_LIVE_MASK
+    // 桌上測試用：每秒印自己的讀值、下一跳、以及收到的其他實體板子的讀值與成本倍率
+    static uint32_t lastBenchLog = 0;
+    if (millis() - lastBenchLog > 1000) {
+        lastBenchLog = millis();
+        Serial.printf("{\"bench\":%d,\"smoke\":%u,\"temp\":%d,\"next\":%d",
+                      localNodeId, meshTable[localNodeId].smoke,
+                      meshTable[localNodeId].temp, cachedNextHop);
+        for (int i = 0; i < NUM_NODES; i++) {
+            if (i != localNodeId && ((BENCH_LIVE_MASK >> i) & 1)) {
+                Serial.printf(",\"N%d\":{\"smoke\":%u,\"temp\":%d,\"stale\":%d,\"factor\":%.2f}",
+                              i, meshTable[i].smoke, meshTable[i].temp,
+                              isNodeStale(i), hazardFactor(i));
+            }
+        }
+        Serial.println("}");
+    }
+#endif
+
     if (millis() - lastBroadcastTime > broadcastInterval) {
         lastBroadcastTime = millis();
         broadcastInterval = 180 + (uint16_t)(esp_random() % 41);
@@ -679,6 +713,15 @@ void loop() {
         // Address pins unset or set to a value no board can have. topology.h
         // lists which pins this board should have tied to GND.
         showStandby(CRGB::Blue, "bad_address");
+        // 跳線接觸不良時開機那一次可能讀錯，每秒重讀；讀到合法 ID 就重開，
+        // 讓 setup() 從頭用正確身分初始化，不用拔電
+        static uint32_t lastAddrRetry = 0;
+        if (millis() - lastAddrRetry > 1000) {
+            lastAddrRetry = millis();
+            if (resolveLocalNodeId() >= 0) {
+                ESP.restart();
+            }
+        }
     } else if (!meshReady) {
         // Radio or queue failed to start. Routing would be meaningless here.
         showStandby(CRGB::Magenta, "mesh_init_failed");

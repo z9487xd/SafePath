@@ -1,6 +1,6 @@
 // disaster-map.js
 // 消防栓分布地圖 — 雙北，資料來源：臺北自來水事業處《大臺北地區消防栓清冊》
-// 靜態讀取 data/fire_hydrants.json（build-time 轉出的檔案，執行期不打任何外部API）
+// 靜態讀取 data/opendata/fire_hydrants.json，經 /api/fire_hydrants 提供（build-time 轉出的檔案，執行期不打任何外部API）
 // 依賴：Leaflet + Leaflet.markercluster（需在 HTML 裡引入，見下方整合說明）
 
 (function () {
@@ -29,12 +29,15 @@
     clusterUp = L.markerClusterGroup({ disableClusteringAtZoom: 18 });
     clusterDown = L.markerClusterGroup({ disableClusteringAtZoom: 18 });
 
-    loadHydrants();
+    wireLayerToggles(); // 只在第一次初始化時綁定，避免每次切分頁重複綁事件
+    loadHydrants().catch(e => console.error("[Hydrants] 載入失敗", e));
   }
 
   async function loadHydrants() {
     if (!hydrantData) {
-      const res = await fetch("data/fire_hydrants.json");
+      const prefix = window.location.protocol === "file:" ? "http://127.0.0.1:8000" : "";
+      const res = await fetch(`${prefix}/api/fire_hydrants`);
+      if (!res.ok) throw new Error("HTTP error " + res.status);
       hydrantData = await res.json();
     }
 
@@ -77,7 +80,6 @@
     show() {
       const firstTime = !map;
       initMap();
-      wireLayerToggles();
       if (!firstTime) {
         // 分頁之前被隱藏過，容器尺寸可能變了，重新計算一次
         setTimeout(() => map.invalidateSize(), 0);

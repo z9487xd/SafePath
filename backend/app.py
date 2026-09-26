@@ -22,6 +22,7 @@ from typing import List, Dict, Any, Optional
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import serial
 import serial.tools.list_ports
 # Works both as `backend.app:app` from the repo root and `app:app` from backend/.
@@ -405,6 +406,8 @@ async def lifespan(app: FastAPI):
     publish_task.cancel()
 
 app = FastAPI(lifespan=lifespan)
+# dashboard.html 拆出的 css/js 都放在 frontend/，以 /static/ 提供
+app.mount("/static", StaticFiles(directory=os.path.dirname(frontend_html_path)), name="static")
 
 @app.get("/")
 async def get_index():
@@ -445,6 +448,13 @@ async def get_resources():
         return {"datasets": {}, "inspection_hotlines": {},
                 "case_service_contacts": {}, "elearning_courses": []}
 
+
+# 消防栓清冊（約三萬筆），build-time 轉好的靜態檔，直接整份回傳給前端地圖。
+hydrants_path = os.path.abspath(os.path.join(base_dir, "../data/opendata/fire_hydrants.json"))
+
+@app.get("/api/fire_hydrants")
+async def get_fire_hydrants():
+    return FileResponse(hydrants_path, media_type="application/json")
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

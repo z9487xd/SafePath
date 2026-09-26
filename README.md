@@ -9,8 +9,15 @@ SafePath is an ESP32-based field safety monitoring and evacuation-route visualiz
 - Live display of node connectivity, smoke, temperature, alerts, and next-hop routes.
 - Sensor nodes adjust route costs based on smoke and temperature. Hazardous nodes are treated as impassable. ESP32 nodes calculate routes; the backend receives and displays their results.
 - Virtual mesh mode for exploring the dashboard and route changes without hardware.
-- Pages for workplace incident reporting thresholds, worker support contacts, occupational safety courses, and fire hydrant locations.
+- Pages for workplace incident reporting thresholds, worker support contacts, occupational safety courses, and fire hydrant locations, backed by the following open datasets:
+  - [Labor Inspection Agency Reporting Hotline](https://data.gov.tw/dataset/41461) — Ministry of Labor, Occupational Safety and Health Administration
+  - [Worker Case Management Service Contacts by County/City](https://data.gov.tw/dataset/44744) — Ministry of Labor, Occupational Safety and Health Administration
+  - [Occupational Injury Type Classification Table](https://data.gov.tw/dataset/41471) — Ministry of Labor, Occupational Safety and Health Administration
+  - [Labor eLearning Courses](https://labor-elearning.mol.gov.tw/) — Ministry of Labor, Occupational Safety and Health Administration
+  - [Taipei Metro Area Fire Hydrant Locations](https://data.gov.tw/dataset/128639) — Taipei Water Department
 - Local JSON caches in `data/opendata/` keep reference resources available offline.
+
+TBD
 
 ## Project Structure
 

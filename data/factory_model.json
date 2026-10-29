@@ -1,78 +1,157 @@
 {
+  "sprinkler_distance": 400.0,
+  "sprinkler_led_pin": 14,
   "nodes": [
     {
-      "id": "EX1",
+      "id": "EXA",
       "index": 0,
-      "x": 100,
-      "y": 200,
+      "x": 1184,
+      "y": 640,
       "type": "exit"
     },
     {
-      "id": "N1",
+      "id": "1",
       "index": 1,
-      "x": 200,
-      "y": 200,
-      "type": "node"
+      "x": 276,
+      "y": 663,
+      "type": "arrow"
     },
     {
-      "id": "N2",
+      "id": "2",
       "index": 2,
-      "x": 200,
-      "y": 100,
-      "type": "node"
+      "x": 276,
+      "y": 1096,
+      "type": "arrow"
     },
     {
-      "id": "N3",
+      "id": "3",
       "index": 3,
-      "x": 100,
-      "y": 100,
-      "type": "node"
+      "x": 507,
+      "y": 637,
+      "type": "sprinkler"
     },
     {
-      "id": "N4",
+      "id": "4",
       "index": 4,
-      "x": 300,
-      "y": 100,
-      "type": "node"
+      "x": 834,
+      "y": 637,
+      "type": "arrow"
     },
     {
-      "id": "EX2",
+      "id": "5",
       "index": 5,
-      "x": 300,
-      "y": 450,
+      "x": 276,
+      "y": 837,
+      "type": "sprinkler"
+    },
+    {
+      "id": "6",
+      "index": 6,
+      "x": 1004,
+      "y": 1070,
+      "type": "arrow"
+    },
+    {
+      "id": "7",
+      "index": 7,
+      "x": 487,
+      "y": 1195,
+      "type": "sprinkler"
+    },
+    {
+      "id": "8",
+      "index": 8,
+      "x": 713,
+      "y": 1070,
+      "type": "arrow"
+    },
+    {
+      "id": "9",
+      "index": 9,
+      "x": 713,
+      "y": 1387,
+      "type": "sprinkler"
+    },
+    {
+      "id": "10",
+      "index": 10,
+      "x": 1136,
+      "y": 975,
+      "type": "sprinkler"
+    },
+    {
+      "id": "EXC",
+      "index": 11,
+      "x": 385,
+      "y": 1540,
       "type": "exit"
     }
   ],
   "edges": [
     {
-      "source": "EX1",
-      "target": "N1",
-      "cost": 100.0
+      "source": "1",
+      "target": "3",
+      "cost": 232.46
     },
     {
-      "source": "EX2",
-      "target": "N4",
-      "cost": 350.0
+      "source": "3",
+      "target": "4",
+      "cost": 327.0
     },
     {
-      "source": "N1",
-      "target": "N2",
-      "cost": 100.0
+      "source": "1",
+      "target": "5",
+      "cost": 174.0
     },
     {
-      "source": "N1",
-      "target": "N3",
-      "cost": 141.42
+      "source": "2",
+      "target": "5",
+      "cost": 259.0
     },
     {
-      "source": "N2",
-      "target": "N3",
-      "cost": 100.0
+      "source": "EXA",
+      "target": "10",
+      "cost": 338.42
     },
     {
-      "source": "N2",
-      "target": "N4",
-      "cost": 100.0
+      "source": "4",
+      "target": "EXA",
+      "cost": 350.01
+    },
+    {
+      "source": "2",
+      "target": "7",
+      "cost": 233.07
+    },
+    {
+      "source": "7",
+      "target": "8",
+      "cost": 258.27
+    },
+    {
+      "source": "8",
+      "target": "4",
+      "cost": 449.59
+    },
+    {
+      "source": "8",
+      "target": "6",
+      "cost": 291.0
+    },
+    {
+      "source": "10",
+      "target": "6",
+      "cost": 162.63
+    },
+    {
+      "source": "8",
+      "target": "9",
+      "cost": 317.0
+    },
+    {
+      "source": "9",
+      "target": "EXC",
+      "cost": 361.93
     }
   ]
 }

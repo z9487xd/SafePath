@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SafePath 現場監控台</title>
 
-<link rel="stylesheet" href="/static/dashboard.css">
+<link rel="stylesheet" href="/static/dashboard.css?v=20261029-5">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
@@ -18,12 +18,10 @@
     <button class="view-tab" id="tab-resources" data-view="resources">災後應變與職安資源</button>
     <button class="view-tab" id="tab-hydrants" data-view="hydrants">消防栓地圖</button>
   </div>
-  <div id="app">
-    <div id="main-panel">
       <header>
         <div class="brand">
-          <h1>SafePath 現場監控台</h1>
-          <div class="subtitle">路徑由各節點 ESP32 邊緣運算決定，本畫面只呈現其回報結果</div>
+          <h1><span class="brand-icon">S</span> SafePath <span class="brand-divider">/</span> 現場監控</h1>
+          <div class="subtitle">智慧疏散導引與現場環境監測</div>
         </div>
         <div class="header-meta">
           <span class="pill" id="source-pill">資料來源未知</span>
@@ -50,7 +48,21 @@
         </div>
       </div>
 
+  <div id="app">
+    <div id="main-panel">
+      <div id="map-toolbar">
+        <div><span class="eyebrow">LIVE TOPOLOGY</span><strong>現場配置圖</strong><span>滾輪縮放 · 拖曳平移 · 點選節點查看</span></div>
+        <div class="map-actions">
+          <button id="map-zoom-out" type="button" aria-label="縮小地圖">−</button>
+          <output id="map-zoom-label">100%</output>
+          <button id="map-zoom-in" type="button" aria-label="放大地圖">＋</button>
+          <button id="map-readable" type="button">重設</button>
+          <button id="map-proportion" type="button" aria-pressed="false">比例</button>
+          <button id="map-details" type="button">節點列表</button>
+        </div>
+      </div>
       <div id="map-container">
+        <div id="map-viewport">
         <svg id="factory-svg" viewBox="0 0 400 400" role="img" aria-label="場域地圖與即時逃生路徑">
           <defs>
             <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -72,25 +84,44 @@
           <g id="layer-path"></g>
           <g id="layer-nodes"></g>
         </svg>
+        </div>
         <div id="tooltip"></div>
       </div>
 
       <div id="legend-bar">
-        <span class="legend-item"><span class="legend-swatch square" style="background-color:var(--good)">✓</span>安全出口</span>
-        <span class="legend-item"><span class="legend-swatch" style="background-color:var(--node)">·</span>正常</span>
-        <span class="legend-item"><span class="legend-swatch" style="background-color:var(--warning)">!</span>警示</span>
-        <span class="legend-item"><span class="legend-swatch" style="background-color:var(--critical)">✕</span>危險阻斷</span>
-        <span class="legend-item"><span class="legend-swatch" style="background-color:var(--offline)">?</span>斷線</span>
-        <span class="legend-item"><span class="legend-swatch hollow"></span>孤立待援</span>
-        <span class="legend-item"><span class="legend-line"></span>ESP32 指向的下一跳</span>
+        <span class="legend-item"><i class="role-key arrow-key"></i>箭頭導引</span>
+        <span class="legend-item"><i class="role-key water-key"></i>撒水節點</span>
+        <span class="legend-item"><i class="role-key sensor-key"></i>僅感測</span>
+        <span class="legend-item"><i class="status-dot"></i>正常</span>
+        <span class="legend-item"><i class="status-dot danger"></i>危險</span>
+        <span class="legend-item">黃環：撒水啟動</span>
       </div>
     </div>
 
     <aside id="side-panel">
+      <section class="panel-section control-card">
+        <div class="panel-header"><span>撒水控制</span><span class="count">LED 模擬裝置</span></div>
+        <div class="panel-body">
+          <label class="control-label" for="sprinkler-target">指定撒水節點</label>
+          <select id="sprinkler-target" aria-label="指定撒水節點"></select>
+          <div class="output-state"><span id="sprinkler-indicator"></span><div><strong id="sprinkler-output">等待節點資料</strong><small id="sprinkler-mode">以現場節點回報確認狀態</small></div></div>
+          <button id="sprinkler-on" class="primary-control" type="button">啟動撒水 <span>30 秒</span></button>
+          <button id="sprinkler-auto" class="secondary-control" type="button">結束手動・恢復自動</button>
+          <div id="control-message" role="status" aria-live="polite">選擇節點後即可手動啟動。</div>
+          <p class="control-note">恢復自動後，危險條件成立時仍會撒水。</p>
+        </div>
+      </section>
+      <section class="panel-section node-inspector">
+        <div class="panel-header">選取節點<span class="count" id="inspector-role">—</span></div>
+        <div id="selected-node-panel" class="panel-body"><strong id="inspector-title">尚未選取</strong><p id="inspector-detail">點選地圖節點，查看讀值與導引狀態。</p></div>
+      </section>
       <section class="panel-section" id="alerts-section">
         <div class="panel-header">法規與應變 SOP<span class="count" id="alert-count"></span></div>
         <div class="panel-body"><div id="alerts-list"><div class="empty-state">系統正常，持續監控中</div></div></div>
       </section>
+    </aside>
+    <details id="node-details">
+      <summary>全部節點 <span>14 個節點的感測與導引資料</span></summary>
       <section class="panel-section" id="table-section">
         <div class="panel-header">節點明細<span class="count">點列可於地圖追蹤路線</span></div>
         <div class="panel-body">
@@ -103,13 +134,14 @@
                 <th class="num">加權</th>
                 <th>下一跳</th>
                 <th>狀態</th>
+                <th>撒水 LED</th>
               </tr>
             </thead>
             <tbody id="node-tbody"></tbody>
           </table>
         </div>
       </section>
-    </aside>
+    </details>
   </div>
 
   <div id="resources-view" class="hidden">
@@ -186,9 +218,9 @@
   </div>
   <div id="hydrant-map"></div>
   </div>
-<script src="/static/mesh-view.js"></script>
+<script src="/static/mesh-view.js?v=20261029-5"></script>
 <script src="/static/disaster-map.js"></script>
-<script src="/static/resources-view.js"></script>
+<script src="/static/resources-view.js?v=20261029-5"></script>
 
 </body>
 </html>

@@ -14,7 +14,7 @@
 #include <stdint.h>
 
 #define MESH_MAGIC 0x5A// The first byte of every packet, to detect misaligned or corrupted data.
-#define MESH_MAX_NODES 24
+#define MESH_MAX_NODES 22
 #define MESH_MAX_HOPS 8
 
 // Sentinels for a sensor that did not answer this round. Missing data must be
@@ -33,6 +33,7 @@ typedef struct __attribute__((packed)) {
     int16_t  tempDeciC;     // temperature * 10
     uint8_t  humidityPct;
     int8_t   nextHop;
+    uint8_t  flags;         // bit 0: output on, bit 1: automatic danger, bit 2: manual lease
     uint8_t  hops;
 } MeshRecord;
 
@@ -43,6 +44,18 @@ typedef struct __attribute__((packed)) {
     uint8_t    recordCount;
     MeshRecord records[MESH_MAX_NODES];
 } MeshPacket;
+
+#define CONTROL_MAGIC 0xC7
+#define MANUAL_DURATION_MS 30000UL
+// Gateway broadcasts; nodes relay each command once, bounded by hops.
+typedef struct __attribute__((packed)) {
+    uint8_t magic;
+    uint32_t commandId;
+    uint8_t targetId;
+    uint8_t enabled;
+    uint8_t hops;
+} ControlPacket;
+static_assert(sizeof(MeshPacket) <= 250, "ESP-NOW payload exceeds 250 bytes");
 
 #define MESH_HEADER_SIZE offsetof(MeshPacket, records)
 

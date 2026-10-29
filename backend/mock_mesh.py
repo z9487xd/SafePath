@@ -30,21 +30,26 @@ HAZARD_GAIN = 2.0
 NEXT_HOP_SAFE = -2 
 NEXT_HOP_TRAPPED = -1
 
-# Scripted scenario: smoke ramps up at HAZARD_NODE and clears again, so the
-# route change and the colour change can be watched happening at different
-# smoke levels.
-HAZARD_NODE = "N1"
-CYCLE_SECONDS = 40
+# Deterministic multi-fire scenarios. Each includes several distinct origins;
+# the final scenario includes heat-only danger to exercise thermal rerouting.
+# Profiles: node -> (peak smoke ADC, peak temperature C).
+SCENARIOS = (
+    {"6": (2600, 66.0), "13": (2600, 66.0)},
+    {"8": (2600, 66.0), "11": (2600, 66.0)},
+    {"6": (2600, 66.0), "14": (2600, 66.0)},
+    {"7": (700, 68.0), "13": (2600, 66.0)},
+)
+SCENARIO_SECONDS = 48
+CYCLE_SECONDS = SCENARIO_SECONDS * len(SCENARIOS)
+HAZARD_NODES = tuple(sorted({node for scenario in SCENARIOS for node in scenario}, key=int))
 BASELINE_SMOKE = 220
-PEAK_SMOKE = 2600
 BASELINE_TEMP = 24.0
-PEAK_TEMP = 58.0
 BASELINE_HUMIDITY = 55
 PEAK_HUMIDITY = 20
 
 # Where the gateway sits. Used only to fake a plausible relay depth for the
 # `hops` field; delete this and _relay_depth() if you want a leaner mock.
-GATEWAY_ANCHOR = "EX1"
+GATEWAY_ANCHOR = "EXA"
 
 
 class VirtualMesh:
@@ -71,14 +76,19 @@ class VirtualMesh:
             self.adjacency[v].append(u)
         
 
-        if HAZARD_NODE not in self.sensors:
-            raise ValueError(f"HAZARD_NODE {HAZARD_NODE!r} is not a sensor node in this map")
+        missing = set(HAZARD_NODES) - set(self.sensors)
+        if missing:
+            raise ValueError(f"scenario nodes are missing from this map: {sorted(missing)}")
 
         self.hops = self._relay_depth()
         self.smoke: Dict[str, int] = {nid: 0 for nid in self.ids}
         self.temp: Dict[str, float] = {nid: BASELINE_TEMP for nid in self.ids}
         self.humidity: Dict[str, int] = {nid: BASELINE_HUMIDITY for nid in self.ids}
         self.seq = 0
+        self.roles = {n["id"]: n["type"] for n in nodes}
+        self.sprinkler_distance = topology["sprinkler_distance"]
+        self.manual_until = {}
+
 
     # Hop count = graph distance from the gateway, minus the first direct hop.
     def _relay_depth(self) -> Dict[str, int]:
@@ -170,35 +180,61 @@ class VirtualMesh:
 
         return current if parent[current] == start else NEXT_HOP_TRAPPED
 
-    def _scripted_smoke(self, node_id: str, tick: int) -> int:
-        phase = tick % CYCLE_SECONDS
-        jitter = (tick + self.index[node_id] * 7) % 40
+    @staticmethod
+    def _fire_progress(tick: int) -> float:
+        phase = tick % SCENARIO_SECONDS
+        if phase < 8:
+            return 0.0
+        if phase < 16:
+            return (phase - 8) / 8.0
+        if phase < 32:
+            return 1.0
+        if phase < 40:
+            return (40 - phase) / 8.0
+        return 0.0
 
-        if node_id != HAZARD_NODE:
-            return BASELINE_SMOKE + jitter
+    def _scripted_readings(self, node_id: str, tick: int):
+        scenario = SCENARIOS[(tick // SCENARIO_SECONDS) % len(SCENARIOS)]
+        profile = scenario.get(node_id)
+        progress = self._fire_progress(tick) if profile else 0.0
+        baseline = BASELINE_SMOKE + (tick + self.index[node_id] * 7) % 40
+        peak_smoke, peak_temp = profile or (baseline, BASELINE_TEMP)
+        return (
+            round(baseline + (peak_smoke - baseline) * progress),
+            round(BASELINE_TEMP + (peak_temp - BASELINE_TEMP) * progress, 1),
+            round(BASELINE_HUMIDITY + (PEAK_HUMIDITY - BASELINE_HUMIDITY) * progress),
+        )
 
-        span = CYCLE_SECONDS // 4
-        if phase < span:
-            return BASELINE_SMOKE + jitter
-        if phase < span * 2:
-            progress = (phase - span) / span
-            return int(BASELINE_SMOKE + (PEAK_SMOKE - BASELINE_SMOKE) * progress)
-        if phase < span * 3:
-            return PEAK_SMOKE
-        progress = (phase - span * 3) / span
-        return int(PEAK_SMOKE - (PEAK_SMOKE - BASELINE_SMOKE) * progress)
+    def sprinkler_flags(self, node_id):
+        import time
+        if self.roles[node_id] != "sprinkler":
+            return 0
+        dist = {node_id: 0.0}
+        todo = {node_id}
+        automatic = False
+        while todo:
+            u = min(todo, key=lambda n: dist[n])
+            todo.remove(u)
+            if dist[u] >= self.sprinkler_distance:
+                break
+            if u in self.exits:
+                continue
+            if self.smoke[u] >= SMOKE_THRESHOLD or self.temp[u] >= TEMP_BLOCK:
+                automatic = True
+                break
+            for v in self.adjacency[u]:
+                d = dist[u] + self.base[self.index[u]][self.index[v]]
+                if d < dist.get(v, INF):
+                    dist[v] = d
+                    todo.add(v)
+        manual = time.monotonic() < self.manual_until.get(node_id, 0)
+        return int(automatic or manual) | (int(automatic) << 1) | (int(manual) << 2)
 
     def tick(self, tick_index: int) -> List[str]:
         """Advance one second and return the serial lines a gateway would print."""
         self.seq += 1
         for node_id in self.sensors:
-            smoke = self._scripted_smoke(node_id, tick_index)
-            self.smoke[node_id] = smoke
-            # Heat and dryness track the smoke, the way a real fire would.
-            ramp = 0.0 if node_id != HAZARD_NODE else min(
-                1.0, max(0.0, (smoke - BASELINE_SMOKE) / (PEAK_SMOKE - BASELINE_SMOKE)))
-            self.temp[node_id] = round(BASELINE_TEMP + (PEAK_TEMP - BASELINE_TEMP) * ramp, 1)
-            self.humidity[node_id] = int(BASELINE_HUMIDITY + (PEAK_HUMIDITY - BASELINE_HUMIDITY) * ramp)
+            self.smoke[node_id], self.temp[node_id], self.humidity[node_id] = self._scripted_readings(node_id, tick_index)
         #打包成json格式的字串，模擬網路傳輸
         lines = []
         for node_id in self.sensors:
@@ -209,6 +245,7 @@ class VirtualMesh:
                 "humidity": self.humidity[node_id],
                 "next_hop": self.solve_next_hop(node_id),
                 "hops": self.hops[node_id],
+                "sprinkler_flags": self.sprinkler_flags(node_id),
             }, separators=(",", ":")))
         return lines
 

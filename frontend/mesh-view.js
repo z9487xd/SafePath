@@ -6,8 +6,9 @@
     // LED arrow on the model always agree.
 
     const SVG_NS = "http://www.w3.org/2000/svg";
-    const NODE_R = 19;
-    const EXIT_SIZE = 38;
+    const NODE_R = 40;
+    const EXIT_SIZE = 80;
+    const SPRINKLER_STROKE_WIDTH = 8; // Active sprinkler border, in screen pixels.
 
     // Status is encoded three ways at once: colour, glyph, and a word. Red and
     // green are indistinguishable to many people, so colour can never be alone.
@@ -34,8 +35,13 @@
     let nodeState = {};
     let frameTime = 0;
     let selectedNodeId = null;
-
+    const pendingControls = new Map();
+    const confirmedManual = new Set();
+    let commandMessage = "選擇節點後即可手動啟動。";
+    let commandError = false;
         const isExit = id => !!topology[id] && topology[id].type === "exit";
+    const roleLabel = id => ({arrow:"箭頭", sprinkler:"撒水", sensor:"僅感測", exit:"出口"}[topology[id].type] || "節點");
+    const isSprinkler = id => topology[id]?.type === "sprinkler";
     const sensorIds = () => Object.keys(topology).filter(id => !isExit(id));
 
     function statusOf(id) {
@@ -84,17 +90,6 @@
         current = hop;
       }
       return chain;
-    }
-
-    // Nodes can sit close together, so a label always drawn below would land on
-    // top of the neighbour. Put it above when something is directly underneath.
-    function noteBelow(id) {
-      const self = topology[id];
-      return !Object.keys(topology).some(other => {
-        if (other === id) return false;
-        const p = topology[other];
-        return Math.abs(p.x - self.x) < 45 && p.y > self.y && p.y - self.y < 60;
-      });
     }
 
     // Smoke halo, sized by reading. Shows where a hazard is spreading, not just
@@ -165,12 +160,16 @@
       const meta = statusOf(id);
 
       shape.setAttribute("fill", meta.color);
-      if (id === selectedNodeId) {
-        shape.setAttribute("stroke", "#FFE600");
-        shape.setAttribute("stroke-width", "3");
-      } else {
+      if (isSprinkler(id) && state?.status !== "OFFLINE" && state?.sprinkler_active) {
+        shape.setAttribute("stroke", "#ffe600");
+        shape.style.strokeWidth = `${SPRINKLER_STROKE_WIDTH}px`;
+      }
+      if (id === selectedNodeId && !(isSprinkler(id) && state?.status !== "OFFLINE" && state?.sprinkler_active)) {
+        shape.setAttribute("stroke", "#ffffff");
+        shape.style.strokeWidth = "3px";
+      } else if (!(isSprinkler(id) && state?.status !== "OFFLINE" && state?.sprinkler_active)) {
         shape.setAttribute("stroke", "rgba(255,255,255,.16)");
-        shape.setAttribute("stroke-width", "2");
+        shape.style.strokeWidth = "2px";
       }
       if (state && state.status === "OFFLINE") {
         shape.setAttribute("stroke-dasharray", "4 3");
@@ -188,68 +187,134 @@
       if (glyph) glyph.textContent = showBadge ? meta.glyph : "";
 
       const ring = el(`ring-${id}`);
-      if (ring) ring.classList.toggle("active", !!state && state.next_hop === "TRAPPED");
+      // A node's last report outlives it: one unplugged right after losing its
+      // neighbours stays TRAPPED in the snapshot. Offline has to win, or a dead
+      // board is shown as someone waiting for rescue.
+      const trapped = !!state && state.status !== "OFFLINE" && state.next_hop === "TRAPPED";
+      if (ring) ring.classList.toggle("active", trapped);
 
-      // Label abnormal nodes only. Normal readings live in the side table, which
-      // keeps the map readable where nodes are close together.
-      const note = el(`note-${id}`);
-      if (note) {
-        let text = "";
-        if (state && state.status === "OFFLINE") {
-          text = `離線 ${Math.max(0, Math.round(frameTime - (state.last_seen || frameTime)))}s`;
-        } else if (state && state.next_hop === "TRAPPED") {
-          text = "無路徑";
-        } else if (state && (state.status === "HAZARD" || state.status === "WARNING")) {
-          const hot = state.temp != null && limits.temp_warning != null
-            && state.temp >= limits.temp_warning;
-          text = hot ? `${state.smoke} ADC · ${state.temp.toFixed(0)}°C` : `${state.smoke} ADC`;
-        }
-        note.textContent = text;
+    }
+
+    function apiPrefix() {
+      return window.location.protocol === "file:" ? "http://127.0.0.1:8000" : "";
+    }
+    async function sendSprinkler(id, action) {
+      if (pendingControls.has(id)) return;
+      selectedNodeId = id;
+      el("sprinkler-target").value = id;
+      const command = {action, baseline:nodeState[id]?.last_seen ?? 0, deadline:Date.now()+10000};
+      pendingControls.set(id, command);
+      commandMessage = `${id} 號：正在傳送指令…`;
+      commandError = false;
+      renderSelection();
+      try {
+        const response = await fetch(`${apiPrefix()}/api/sprinklers/${encodeURIComponent(id)}/${action}`, {
+          method:"POST", signal:AbortSignal.timeout(5000), cache:"no-store"
+        });
+        let result;
+        try { result = await response.json(); } catch { throw new Error("服務回應無法辨識，請重新啟動後端。"); }
+        if (!response.ok) throw new Error(response.status === 503 ? "主控 ESP32 未連線，請確認 USB 與後端序列埠。" : result.detail || "指令傳送失敗");
+        commandMessage = `${id} 號：指令已傳送，等待節點確認…`;
+      } catch (error) {
+        pendingControls.delete(id);
+        commandMessage = `${id} 號：${error.name === "TimeoutError" ? "連線逾時，請確認後端服務。" : error.message}`;
+        commandError = true;
+      }
+      renderSelection();
+    }
+    function appendSprinklerButtons(container, id) {
+      // Delegated events keep buttons usable while telemetry updates the table.
+      for (const [action, label] of [["on", "啟動 30 秒"], ["auto", "自動"]]) {
+        const button = document.createElement("button");
+        button.type = "button"; button.textContent = label;
+        button.className = "sprinkler-control";
+        button.dataset.node = id; button.dataset.action = action;
+        container.appendChild(button);
       }
     }
+    function renderSelection() {
+      const target = el("sprinkler-target").value;
+      for (const [id, command] of pendingControls) {
+        const state = nodeState[id];
+        if (state && state.status !== "OFFLINE" && state.last_seen > command.baseline &&
+            state.sprinkler_manual === (command.action === "on")) {
+          pendingControls.delete(id);
+          if (command.action === "on") confirmedManual.add(id);
+          else confirmedManual.delete(id);
+          commandMessage = `${id} 號：${command.action === "on" ? "節點已確認手動撒水啟動，持續 30 秒。" : "節點已確認恢復自動。"}`;
+          commandError = false;
+        } else if (Date.now() > command.deadline) {
+          pendingControls.delete(id);
+          commandMessage = `${id} 號：未收到節點確認，請確認節點電源、韌體與無線連線後重試。`;
+          commandError = true;
+        }
+      }
+      for (const id of confirmedManual) {
+        const report = nodeState[id];
+        if (report && report.status !== "OFFLINE" && !report.sprinkler_manual && !pendingControls.has(id)) {
+          confirmedManual.delete(id);
+          if (!pendingControls.size) commandMessage = `${id} 號：手動撒水已結束，已恢復自動${report.sprinkler_auto ? "撒水。" : "監測。"}`;
+        }
+      }
+      const state = nodeState[target];
+      const online = state && state.status !== "OFFLINE";
+      el("sprinkler-output").textContent = !online ? "節點未連線" : state.sprinkler_active ? "撒水已啟動" : "待命中";
+      el("sprinkler-mode").textContent = !online ? "等待節點回報" : state.sprinkler_manual ? "手動模式 · 30 秒後自動結束" : state.sprinkler_auto ? "危險觸發 · 自動模式" : "自動監測中";
+      el("sprinkler-indicator").classList.toggle("active", !!online && state.sprinkler_active);
+      el("sprinkler-on").disabled = pendingControls.has(target);
+      el("sprinkler-auto").disabled = pendingControls.has(target);
+      el("control-message").textContent = commandMessage;
+      el("control-message").dataset.state = commandError ? "error" : "info";
+      renderTable();
+      if (!selectedNodeId) return;
+      const id = selectedNodeId, selected = nodeState[id];
+      el("inspector-role").textContent = roleLabel(id);
+      el("inspector-title").textContent = isExit(id) ? id.replace("EX", "出口 ") : `${id} 號節點`;
+      el("inspector-detail").textContent = isExit(id) ? "安全出口" :
+        `${statusOf(id).label}　煙霧 ${selected?.smoke ?? "—"} ADC　溫度 ${tempLabel(selected)}　下一跳 ${hopLabel(id)}`;
+    }
+    el("sprinkler-on").addEventListener("click", () => sendSprinkler(el("sprinkler-target").value,"on"));
+    el("sprinkler-auto").addEventListener("click", () => sendSprinkler(el("sprinkler-target").value,"auto"));
+    el("sprinkler-target").addEventListener("change", () => {
+      selectedNodeId = el("sprinkler-target").value; refresh();
+    });
+    el("node-tbody").addEventListener("click", event => {
+      const button = event.target.closest("button[data-action]");
+      if (button) { event.stopPropagation(); sendSprinkler(button.dataset.node,button.dataset.action); }
+    });
 
     // Also the accessible fallback: every value on the map is readable as text.
     function renderTable() {
       const tbody = el("node-tbody");
-      tbody.innerHTML = "";
-
       sensorIds().forEach(id => {
-        const state = nodeState[id];
-        const meta = statusOf(id);
-        const row = document.createElement("tr");
-        if (id === selectedNodeId) row.classList.add("selected");
-        row.addEventListener("click", () => selectNode(id));
-
+        const state = nodeState[id], meta = statusOf(id);
+        let row = el(`table-row-${id}`);
+        if (!row) {
+          row = document.createElement("tr"); row.id = `table-row-${id}`;
+          row.addEventListener("click", event => { if (!event.target.closest("button")) selectNode(id); });
+          for (const cls of ["id", "num mono", "num mono", "num mono", "mono", "", "table-controls"]) {
+            const cell = document.createElement("td");cell.className = cls;row.appendChild(cell);
+          }
+          if (isSprinkler(id)) {
+            row.cells[6].appendChild(document.createElement("div"));
+            appendSprinklerButtons(row.cells[6], id);
+          }
+          tbody.appendChild(row);
+        }
+        row.classList.toggle("selected", id === selectedNodeId);
         const risk = state && state.risk_factor != null ? `×${state.risk_factor.toFixed(2)}` : "∞";
-        const cells = [
-          ["id", id],
-          ["num mono", state ? `${state.smoke}` : "—"],
-          ["num mono", tempLabel(state)],
-          ["num mono", state && state.status !== "OFFLINE" ? risk : "—"],
-          ["mono", hopLabel(id)]
-        ];
-
-        cells.forEach(([cls, value]) => {
-          const td = document.createElement("td");
-          td.className = cls;
-          td.textContent = value;
-          row.appendChild(td);
-        });
-
-        const statusTd = document.createElement("td");
-        const wrap = document.createElement("span");
-        wrap.className = "status-cell";
-        const mark = document.createElement("span");
-        mark.className = "status-mark";
-        mark.style.backgroundColor = meta.color;
-        mark.textContent = meta.glyph;
-        wrap.appendChild(mark);
-        wrap.appendChild(document.createTextNode(
-          state && state.next_hop === "TRAPPED" ? "孤立待援" : meta.label));
-        statusTd.appendChild(wrap);
-        row.appendChild(statusTd);
-
-        tbody.appendChild(row);
+        const values = [`${id} · ${roleLabel(id)}`, state ? `${state.smoke}` : "—", tempLabel(state),
+          state && state.status !== "OFFLINE" ? risk : "—", hopLabel(id)];
+        values.forEach((value, index) => {row.cells[index].textContent = value;});
+        row.cells[5].textContent = state && state.status !== "OFFLINE" && state.next_hop === "TRAPPED" ? "孤立待援" : meta.label;
+        row.cells[5].style.color = meta.color;
+        if (isSprinkler(id)) {
+          const busy = pendingControls.has(id);
+          row.cells[6].querySelector("div").textContent = busy ? "等待節點確認…" :
+            !state || state.status === "OFFLINE" ? "撒水狀態未知" : state.sprinkler_manual ? "撒水（手動）" :
+            state.sprinkler_auto ? "撒水（自動）" : "自動待命";
+          row.cells[6].querySelectorAll("button").forEach(button => {button.disabled = busy;});
+        } else row.cells[6].textContent = "—";
       });
     }
 
@@ -277,12 +342,13 @@
       Object.keys(topology).forEach(applyNodeVisual);
       renderHeat();
       renderPaths();
-      renderTable();
+      renderSelection();
       updateKpis();
     }
 
     function selectNode(id) {
       selectedNodeId = (selectedNodeId === id) ? null : id;
+      if (selectedNodeId && isSprinkler(selectedNodeId)) el("sprinkler-target").value = selectedNodeId;
       refresh();
     }
 
@@ -291,7 +357,7 @@
       const meta = statusOf(id);
       const rect = mapContainer.getBoundingClientRect();
 
-      const rows = [`<div class="tt-title">${id} · ${meta.label}</div>`];
+      const rows = [`<div class="tt-title">${id} · ${roleLabel(id)} · ${meta.label}</div>`];
       if (state) {
         rows.push(`<div class="tt-row">煙霧 <b>${state.smoke} ADC</b></div>`);
         rows.push(`<div class="tt-row">溫度 <b>${tempLabel(state)}${state.temp == null ? "" : "C"}</b></div>`);
@@ -318,15 +384,17 @@
     function fitViewBox() {
       const pts = Object.values(topology).filter(n => n && n.x !== undefined);
       if (!pts.length) return;
-      const pad = 58;
+      const pad = 95;
       const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
       const x = Math.min(...xs) - pad, y = Math.min(...ys) - pad;
       const w = Math.max(...xs) - Math.min(...xs) + pad * 2;
       const h = Math.max(...ys) - Math.min(...ys) + pad * 2;
       const side = Math.max(w, h);
+      mapBounds = {w, h};
+      homeCamera = {x,y,w,h};
 
       el("factory-svg").setAttribute("viewBox",
-        `${x - (side - w) / 2} ${y - (side - h) / 2} ${side} ${side}`);
+        `${x} ${y} ${w} ${h}`);
       document.querySelectorAll("#factory-svg > rect").forEach(r => {
         r.setAttribute("x", x - side); r.setAttribute("y", y - side);
         r.setAttribute("width", side * 3); r.setAttribute("height", side * 3);
@@ -335,6 +403,7 @@
 
     function initMap() {
       fitViewBox();
+      resizeMap();
       edgesLayer.innerHTML = "";
       heatLayer.innerHTML = "";
       pathLayer.innerHTML = "";
@@ -366,21 +435,25 @@
         g.appendChild(ring);
 
         let shape;
-        if (isExit(id)) {
+        if (isExit(id) || node.type === "arrow") {
           shape = document.createElementNS(SVG_NS, "rect");
           shape.setAttribute("x", node.x - EXIT_SIZE / 2);
           shape.setAttribute("y", node.y - EXIT_SIZE / 2);
           shape.setAttribute("width", EXIT_SIZE);
           shape.setAttribute("height", EXIT_SIZE);
           shape.setAttribute("rx", 8);
+        } else if (node.type === "sensor") {
+          shape = document.createElementNS(SVG_NS, "polygon");
+          shape.setAttribute("points", `${node.x},${node.y-NODE_R} ${node.x+NODE_R},${node.y} ${node.x},${node.y+NODE_R} ${node.x-NODE_R},${node.y}`);
         } else {
           shape = document.createElementNS(SVG_NS, "circle");
           shape.setAttribute("cx", node.x);
           shape.setAttribute("cy", node.y);
           shape.setAttribute("r", NODE_R);
         }
+        shape.setAttribute("vector-effect", "non-scaling-stroke");
         shape.setAttribute("id", `shape-${id}`);
-        shape.setAttribute("class", "node-shape");
+        shape.setAttribute("class", `node-shape role-${node.type}`);
         shape.setAttribute("fill", "var(--line-strong)");
         g.appendChild(shape);
 
@@ -408,13 +481,6 @@
         glyph.setAttribute("id", `glyph-${id}`);
         glyph.setAttribute("class", "badge-glyph");
         g.appendChild(glyph);
-
-        const note = document.createElementNS(SVG_NS, "text");
-        note.setAttribute("x", node.x);
-        note.setAttribute("y", node.y + (noteBelow(id) ? hitRadius(id) + 14 : -(hitRadius(id) + 9)));
-        note.setAttribute("id", `note-${id}`);
-        note.setAttribute("class", "node-note");
-        g.appendChild(note);
 
         shape.addEventListener("click", () => selectNode(id));
         shape.addEventListener("mousemove", evt => showTooltip(id, evt));
@@ -535,16 +601,83 @@
       };
     }
 
+    let mapBounds = {w:1100,h:1500};
+    let mapZoom = 1;
+    let originalProportions = window.matchMedia("(max-width:760px)").matches;
+    let camera = {x:0,y:0,w:1100,h:1500};
+    let homeCamera = null;
+    function resizeMap() {
+      if (!homeCamera) return;
+      const viewport = el("map-viewport");
+      const ratio = viewport.clientWidth / Math.max(1,viewport.clientHeight);
+      let w=homeCamera.w, h=homeCamera.h;
+      if (w/h < ratio) w=h*ratio; else h=w/ratio;
+      camera={x:homeCamera.x+(homeCamera.w-w)/2,y:homeCamera.y+(homeCamera.h-h)/2,w,h};
+      mapZoom=1; applyCamera();
+    }
+    function applyCamera() {
+      el("factory-svg").setAttribute("viewBox",`${camera.x} ${camera.y} ${camera.w} ${camera.h}`);
+      el("map-zoom-label").textContent=`${Math.round(mapZoom*100)}%`;
+    }
+    function zoomMap(factor, fx=.5, fy=.5) {
+      const next=Math.max(.5,Math.min(4,mapZoom*factor));
+      const scale=mapZoom/next;
+      camera.x+=camera.w*(1-scale)*fx; camera.y+=camera.h*(1-scale)*fy;
+      camera.w*=scale; camera.h*=scale; mapZoom=next; applyCamera();
+    }
+    el("map-zoom-in").addEventListener("click",()=>zoomMap(1.25));
+    el("map-zoom-out").addEventListener("click",()=>zoomMap(1/1.25));
+    el("map-readable").addEventListener("click",resizeMap);
+    el("map-details").addEventListener("click",()=>{el("node-details").open=!el("node-details").open;if(el("node-details").open)el("node-details").scrollIntoView({behavior:"smooth",block:"start"});});
+    el("map-proportion").addEventListener("click",()=>{
+      originalProportions=!originalProportions;
+      for(const node of Object.values(topology)) node.y=node.sourceY*(originalProportions?1:.45)+(node.type === "exit" && node.sourceY > 1400 && !originalProportions ? 50 : 0);
+      el("map-proportion").setAttribute("aria-pressed",String(originalProportions));
+      initMap();resizeMap();refresh();
+    });
+    const viewport=el("map-viewport");
+    viewport.addEventListener("wheel",event=>{
+      event.preventDefault(); const rect=viewport.getBoundingClientRect();
+      zoomMap(Math.exp(-event.deltaY*.002),(event.clientX-rect.left)/rect.width,(event.clientY-rect.top)/rect.height);
+    },{passive:false});
+    let drag=null, dragged=false;
+    viewport.addEventListener("pointerdown",event=>{
+      if(event.button!==0)return;
+      drag={x:event.clientX,y:event.clientY,cx:camera.x,cy:camera.y};dragged=false;
+    });
+    viewport.addEventListener("pointermove",event=>{
+      if(!drag)return;
+      const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+      if(!dragged && Math.hypot(dx,dy)<5)return;
+      dragged=true;viewport.setPointerCapture(event.pointerId);viewport.classList.add("is-dragging");
+      camera.x=drag.cx-dx*camera.w/viewport.clientWidth;
+      camera.y=drag.cy-dy*camera.h/viewport.clientHeight;applyCamera();hideTooltip();
+    });
+    for(const type of ["pointerup","pointercancel"])viewport.addEventListener(type,()=>{drag=null;viewport.classList.remove("is-dragging");});
+    viewport.addEventListener("click",event=>{if(dragged){event.stopPropagation();dragged=false;}},true);
+    new ResizeObserver(resizeMap).observe(viewport);
+    setInterval(renderSelection,500);
+
     async function bootstrap() {
       try {
         const loaded = await loadTopology();
         if (!loaded || !loaded.nodes) throw new Error("Invalid topology data structure");
 
-        topology = loaded.nodes;
+        // Display layout only: keep physical corridor lengths on the ESP32.
+        // Compress vertical whitespace for wide screens; original proportions
+        // remain available without changing the topology or trigger distance.
+        topology = Object.fromEntries(Object.entries(loaded.nodes).map(([id, node]) =>
+          [id, {...node, sourceY: node.y, y: node.y * (originalProportions ? 1 : .45) + (node.type === "exit" && node.y > 1400 && !originalProportions ? 50 : 0)}]));
         edges = loaded.edges || [];
         limits = loaded.limits || {};
 
+        el("sprinkler-target").replaceChildren(...sensorIds().filter(isSprinkler).map(id=>{
+          const option=document.createElement("option");option.value=id;option.textContent=`${id} 號 · 撒水節點`;return option;
+        }));
+        el("map-proportion").setAttribute("aria-pressed",String(originalProportions));
+        selectedNodeId="1";
         initMap();
+        resizeMap();
         refresh();
         connectWebSocket();
       } catch (err) {

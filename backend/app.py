@@ -18,19 +18,20 @@ import json
 import time
 import asyncio
 import threading
+import secrets
 from typing import List, Dict, Any, Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import serial
 import serial.tools.list_ports
 # Works both as `backend.app:app` from the repo root and `app:app` from backend/.
 try:
-    from .mock_mesh import VirtualMesh, HAZARD_NODE
+    from .mock_mesh import VirtualMesh, HAZARD_NODES
     from . import opendata_client
 except ImportError:
-    from mock_mesh import VirtualMesh, HAZARD_NODE
+    from mock_mesh import VirtualMesh, HAZARD_NODES
     import opendata_client
 
 USE_MOCK_SERIAL = os.getenv("USE_MOCK_SERIAL", "false").lower() == "true"
@@ -156,6 +157,10 @@ class ConnectionManager:
 manager = ConnectionManager()
 latest_telemetry: Dict[str, Any] = {}
 telemetry_lock = threading.Lock()
+serial_write_lock = threading.Lock()
+serial_connection = None
+virtual_mesh = None
+
 
 # Set by the reader thread, cleared by publish(). The thread never touches the
 # event loop now, which is what removed the overlapping sends.
@@ -306,6 +311,9 @@ def ingest_pipeline(raw_json_str: str):
 
         now = time.time()
         payload = {
+            "sprinkler_active": bool(data.get("sprinkler_flags", 0) & 1),
+            "sprinkler_auto": bool(data.get("sprinkler_flags", 0) & 2),
+            "sprinkler_manual": bool(data.get("sprinkler_flags", 0) & 4),
             "smoke": int(smoke),
             "temp": temp,
             "humidity": int(humidity) if humidity is not None else None,
@@ -325,10 +333,12 @@ def ingest_pipeline(raw_json_str: str):
 # The virtual mesh replaces the serial port, not the parsing below it: the
 # lines it produces are byte-for-byte what the real gateway prints.
 def mock_serial_worker():
+    global virtual_mesh
     with open(model_path, "r", encoding="utf-8") as f:
         mesh = VirtualMesh(json.load(f))
+        virtual_mesh = mesh
 
-    print(f"[Mock] Virtual mesh online: {len(mesh.sensors)} nodes, scripted hazard at {HAZARD_NODE}", flush=True)
+    print(f"[Mock] Virtual mesh online: {len(mesh.sensors)} nodes, scripted multi-fire scenarios at {HAZARD_NODES}", flush=True)
 
     tick = 0
     while True:
@@ -338,12 +348,23 @@ def mock_serial_worker():
         time.sleep(1.0)
 
 def real_serial_worker():
+    global serial_connection
     ser = None
     while True:#不斷取得資料
         try:
             if ser is None:
                 port = auto_detect_serial_port()
-                ser = serial.Serial(port, DEFAULT_BAUD, timeout=1.0)
+                ser = serial.Serial(port, DEFAULT_BAUD, timeout=1.0, write_timeout=1.0)
+                # The cp210x driver only reprograms the chip when the requested
+                # speed differs from the tty's recorded one. If the chip was left
+                # at another rate (a monitor opened at 9600), opening at 115200
+                # changes nothing and every line arrives as garbage that the
+                # "{...}" filter drops silently. Bouncing the rate forces a write.
+                ser.baudrate = 9600
+                ser.baudrate = DEFAULT_BAUD
+                ser.reset_input_buffer()
+                with serial_write_lock:
+                    serial_connection = ser
                 print(f"[Serial] Successfully connected to {port}", flush=True)
 
             line = ser.readline().decode("utf-8", errors="ignore").strip()
@@ -359,6 +380,8 @@ def real_serial_worker():
 
         except Exception as e:
             print(f"[Serial Error] {e}", flush=True)
+            with serial_write_lock:
+                serial_connection = None
             if ser:
                 try:
                     ser.close()
@@ -407,6 +430,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 # dashboard.html 拆出的 css/js 都放在 frontend/，以 /static/ 提供
+@app.middleware("http")
+async def disable_frontend_cache(request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
 app.mount("/static", StaticFiles(directory=os.path.dirname(frontend_html_path)), name="static")
 
 @app.get("/")
@@ -431,7 +461,7 @@ async def get_topology():
                 str(n["id"]): {"x": n["x"], "y": n["y"], "type": n["type"]}
                 for n in data.get("nodes", [])
             }
-            return {"nodes": nodes_dict, "edges": data.get("edges", []), "limits": LIMITS}
+            return {"nodes": nodes_dict, "edges": data.get("edges", []), "limits": LIMITS, "sprinkler_distance": data.get("sprinkler_distance")}
     return {"nodes": {}, "edges": [], "limits": LIMITS}
 
 # The three Labour Ministry datasets, read from the on-disk cache. Separate from
@@ -466,3 +496,31 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+@app.post("/api/sprinklers/{node_id}/{action}")
+def control_sprinkler(node_id: str, action: str):
+    if action not in ("on", "auto"):
+        raise HTTPException(400, "action must be on or auto")
+    with open(model_path, encoding="utf-8") as f:
+        nodes = json.load(f)["nodes"]
+    node = next((n for n in nodes if n["id"] == node_id), None)
+    if not node or node["type"] != "sprinkler":
+        raise HTTPException(404, "unknown sprinkler node")
+    enabled = action == "on"
+    command_id = secrets.randbelow(0xFFFFFFFF) + 1
+    if USE_MOCK_SERIAL:
+        if virtual_mesh is None:
+            raise HTTPException(503, "virtual mesh is not ready")
+        virtual_mesh.manual_until[node_id] = time.monotonic() + 30 if enabled else 0
+    else:
+        with serial_write_lock:
+            if serial_connection is None:
+                raise HTTPException(503, "gateway is disconnected")
+            try:
+                message = f"SPRINKLER {command_id} {node['index']} {int(enabled)}\n".encode("ascii")
+                if serial_connection.write(message) != len(message):
+                    raise IOError("incomplete serial write")
+            except Exception as exc:
+                raise HTTPException(503, "gateway command write failed") from exc
+    return {"command_id": command_id, "status": "sent", "duration_seconds": 30 if enabled else 0}

@@ -12,7 +12,6 @@ SafePath is an ESP32-based field safety monitoring and evacuation-route visualiz
 - Pages for workplace incident reporting thresholds, worker support contacts, occupational safety courses, and fire hydrant locations, backed by the following open datasets:
   - [Labor Inspection Agency Reporting Hotline](https://data.gov.tw/dataset/41461) — Ministry of Labor, Occupational Safety and Health Administration
   - [Worker Case Management Service Contacts by County/City](https://data.gov.tw/dataset/44744) — Ministry of Labor, Occupational Safety and Health Administration
-  - [Occupational Injury Type Classification Table](https://data.gov.tw/dataset/41471) — Ministry of Labor, Occupational Safety and Health Administration
   - [Labor eLearning Courses](https://labor-elearning.mol.gov.tw/) — Ministry of Labor, Occupational Safety and Health Administration
   - [Taipei Metro Area Fire Hydrant Locations](https://data.gov.tw/dataset/128639) — Taipei Water Department
 - Local JSON caches in `data/opendata/` keep reference resources available offline.
@@ -45,7 +44,7 @@ $env:USE_MOCK_SERIAL = "true"
 python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open <http://127.0.0.1:8000/>. The simulator builds a virtual mesh from `data/factory_model.json` and periodically raises smoke levels at node `N1` to demonstrate route changes.
+Open <http://127.0.0.1:8000/>. The simulator builds a virtual mesh from `data/factory_model.json` and cycles through simultaneous fires at nodes 6+13, 8+11, 6+14, and 7+13 to demonstrate route changes; each scenario lasts 48 seconds and includes rise, peak, and recovery phases. Node 7 also exercises heat-only danger.
 
 If PowerShell blocks virtual-environment activation, run the commands using `.venv\Scripts\python.exe` directly, for example:
 
@@ -118,3 +117,80 @@ The script generates `data/factory_model.json` and `firmware/node/include/topolo
 ## Data Notes
 
 The backend and frontend read `data/osha_rules.json`, `data/factory_model.json`, and JSON files under `data/opendata/`. Open-data pages use local caches. If a cache entry has no verified source URL or retrieval timestamp, the dashboard reports it as unverified. Confirm the source, update date, and applicability of these datasets before operational use.
+
+
+## image.png map and sprinkler LEDs (2026-10-29)
+
+The map has 14 physical nodes: arrows 3/4/7/9/12, sprinklers
+1/5/6/8/10/11/13/14, and sensor-only 2. EXA/EXB/EXC are virtual exits.
+5 has no direct edge to EXC, as drawn in the image.
+
+All **field nodes** use the same `firmware/node` default `esp32dev` binary.
+The USB gateway still uses `firmware/gateway`; rebuild and flash both projects
+because the mesh record format changed. Do not use the legacy N1/N2 bench or
+DHT26 configurations with this map: GPIO26 is now an address pin.
+
+Address pins are GPIO32/33/25/26 (grounded = 1). See the generated wiring table
+in `firmware/node/include/topology.h` for each board's jumpers. No jumper reads
+zero and is rejected. Arrow matrix DATA stays GPIO13, MQ-2 stays GPIO34, DHT22
+DATA stays GPIO27. Sprinkler LED: **GPIO14 → 220–330 ohm resistor → LED anode;
+LED cathode → GND**. This is a small ordinary LED driven at 3.3 V, not a mains
+lamp. GPIO14 is on the same header side as the existing pins on the usual
+ESP32 DevKit layout; check the actual board labels before wiring.
+
+`tools/place.py` owns `SPRINKLER_DISTANCE` (default **400 image/map units**,
+not metres) and `SPRINKLER_LED_PIN`. Run `python tools/place.py`, then rebuild.
+Only sprinkler nodes drive GPIO14. An LED turns on when the node itself or a
+fresh sensor record at **shortest corridor distance strictly below the limit**
+reports smoke ≥2000 or temperature ≥60 °C. Distances sum corridor lengths,
+ignore evacuation hazard weights, and do not traverse exits as shortcuts.
+No line-of-sight proximity or transitive sprinkler-to-sprinkler activation is
+used. Expired readings (6 seconds) are excluded from automatic triggers;
+this prototype does not latch stale fire readings or survive a power loss.
+
+Dashboard buttons call `POST /api/sprinklers/{id}/on` (manual 30-second lease)
+or `/auto` (cancel manual lease). Backend writes a bounded serial command,
+gateway broadcasts it, and nodes relay each command once with a hop limit.
+Automatic danger still keeps the LED on after returning to auto. The UI says
+"sent" only after serial write and shows output from node telemetry, so a lost
+radio command is not presented as successful actuation. There is currently no
+automatic retry or delivery guarantee; inspect the node's reported output.
+Gateway disconnection returns HTTP 503. Mock mode supports the same buttons.
+
+Verification: `python -m unittest discover -s tests -v`,
+`node --check frontend/mesh-view.js`, `pio run -d firmware/node`, and
+`pio run -d firmware/gateway`. Actual RF delivery and wiring require hardware.
+
+
+### 節點編號與撒水操作
+
+節點名稱直接使用 1～14，編號與 ESP32 位址跳線讀到的數值一致。
+原圖位置依序對應：A1→1、A2→2、A3→3、A4→4、A5→5、B1→6、B2→7、
+B3→8、C1→9、C2→10、D1→11、D2→12、D3→13、D4→14。
+
+- 箭頭：3、4、7、9、12（感測＋箭頭矩陣）。
+- 撒水：1、5、6、8、10、11、13、14（感測＋GPIO14 普通 LED）。
+- 僅感測：2。
+
+普通 LED 接法：GPIO14 → 220～330Ω 電阻 → LED 長腳（正極），短腳接 GND。
+所有現場節點燒錄 node 的 esp32dev；主控 ESP32 燒錄 gateway，USB 接後端電腦。
+依 topology.h 接好位址跳線，使用新產生的地圖啟動／重新啟動後端。
+開 dashboard，點選地圖上的撒水節點，按「撒水 30 秒」，觀察回報「手動撒水」。
+按「恢復自動」可取消手動撒水。若自動危險條件仍成立，LED 仍會亮。
+自動條件：自己或走道最短距離 <400 地圖單位內的在線節點，煙霧 ≥2000 ADC
+或溫度 ≥60°C；例如 3 號危險，會觸發相距 395 的 1 號及相距約 232 的 6 號。
+無硬體時可用 USE_MOCK_SERIAL=true 操作同樣按鈕，僅模擬燈號。
+
+地圖預設使用寬版顯示，壓縮原圖的垂直空白以提高節點可讀性；按「原圖比例」
+可還原 image.png 的長寬比例。此操作只影響瀏覽器座標，走道距離與韌體觸發條件保持不變。
+地圖支援縮放、捲動、選取節點直接操作撒水 LED。
+
+
+### 控制台更新（2026-10-29）
+
+撒水控制使用右側固定選單與「啟動撒水」按鈕，持續 30 秒；畫面會等待
+節點的新回報確認手動模式，10 秒內未確認會顯示失敗並可重試。
+地圖使用 SVG viewBox 縮放，可使用 ＋／−、滾輪與拖曳；「重設」還原視野。
+原圖比例按鈕僅影響畫面。請重新啟動後端並重新整理頁面。
+新版 gateway 加入同一指令重送兩次，採相同 ID 去重，需重新燒錄 gateway。
+這不等於送達保證，成功狀態仍依節點回報；實際硬體與 RF 需上板驗證。

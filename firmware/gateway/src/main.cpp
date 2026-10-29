@@ -1,12 +1,15 @@
 // Gateway firmware.
 //
 // Listens to the ESP-NOW mesh and prints one JSON line per new reading to USB
-// serial for the backend. It only receives, so it can never influence routing.
+// serial for the backend. It also forwards bounded sprinkler commands; routing remains on nodes.
 
 #include <Arduino.h>
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
+#include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
 #include "mesh_protocol.h"
 
 #define WIFI_CHANNEL 1
@@ -42,7 +45,7 @@ void onDataReceived(RecvInfoPtr info, const uint8_t *incomingData, int len) {
         return;
     }
 
-    MeshPacket packet;
+    MeshPacket packet = {};
     memcpy(&packet, incomingData, len);
     // 篩選資料包，檢查資料包的magic是否符合MESH_MAGIC，如果不符合就直接return
     if (packet.magic != MESH_MAGIC || packet.recordCount > MESH_MAX_NODES) {
@@ -71,16 +74,30 @@ void setup() {
         startupError = "queue creation failed";
         return;
     }
-    WiFi.mode(WIFI_STA);
+    if (!WiFi.mode(WIFI_STA)) {
+        startupError = "WiFi station init failed";
+        return;
+    }
     WiFi.disconnect();
 
     //這是 ESP32 在沒有連線到 WiFi AP 時，仍然可以接收 ESP-NOW 的資料包的方式。這裡先把 WiFi 設定成 promiscuous 模式，然後設定頻道為 WIFI_CHANNEL，最後再關閉 promiscuous 模式。這樣就可以在指定的頻道上接收 ESP-NOW 的資料包。
-    esp_wifi_set_promiscuous(true);
-    esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
-    esp_wifi_set_promiscuous(false);
+    if (esp_wifi_set_promiscuous(true) != ESP_OK ||
+        esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE) != ESP_OK ||
+        esp_wifi_set_promiscuous(false) != ESP_OK) {
+        startupError = "WiFi channel setup failed";
+        return;
+    }
 
     if (esp_now_init() != ESP_OK) {
         startupError = "ESP-NOW init failed";
+        return;
+    }
+
+    esp_now_peer_info_t peer = {};
+    memset(peer.peer_addr, 255, 6);
+    peer.channel = WIFI_CHANNEL;
+    if (esp_now_add_peer(&peer) != ESP_OK) {
+        startupError = "broadcast peer registration failed";
         return;
     }
 
@@ -89,6 +106,61 @@ void setup() {
     if (esp_now_register_recv_cb(onDataReceived) != ESP_OK) {
         startupError = "ESP-NOW receive callback registration failed";
         return;
+    }
+}
+
+static ControlPacket pendingCommand = {};
+static uint8_t commandRetries = 0;
+static unsigned long commandLastSent = 0;
+
+// sscanf's unsigned conversions accept negative numbers and overflow. Reject
+// malformed fields before narrowing them into the binary control packet.
+bool parseControlCommand(const char *line, ControlPacket &command) {
+    const char prefix[] = "SPRINKLER ";
+    if (strncmp(line, prefix, sizeof(prefix) - 1) != 0) return false;
+    const char *cursor = line + sizeof(prefix) - 1;
+    const unsigned long limits[] = {UINT32_MAX, MESH_MAX_NODES - 1, 1};
+    unsigned long fields[3];
+    for (int i = 0; i < 3; ++i) {
+        while (isspace(static_cast<unsigned char>(*cursor))) ++cursor;
+        if (*cursor < '0' || *cursor > '9') return false;
+        char *end;
+        errno = 0;
+        fields[i] = strtoul(cursor, &end, 10);
+        if (errno == ERANGE || fields[i] > limits[i]) return false;
+        if (*end && !isspace(static_cast<unsigned char>(*end))) return false;
+        cursor = end;
+    }
+    while (isspace(static_cast<unsigned char>(*cursor))) ++cursor;
+    if (*cursor || fields[0] == 0) return false;
+    command = {CONTROL_MAGIC, static_cast<uint32_t>(fields[0]),
+               static_cast<uint8_t>(fields[1]), static_cast<uint8_t>(fields[2]), 0};
+    return true;
+}
+
+// Fixed-size line buffer: no blocking read or unbounded String allocation.
+void readCommands() {
+    static char line[80];
+    static size_t used = 0;
+    static bool overflow = false;
+    while (Serial.available()) {
+        char ch = Serial.read();
+        if (ch == '\n') {
+            line[used] = 0;
+            ControlPacket command;
+            if (!overflow && parseControlCommand(line, command)) {
+                uint8_t broadcast[] = {255,255,255,255,255,255};
+                esp_err_t result = esp_now_send(broadcast, (uint8_t *)&command, sizeof(command));
+                pendingCommand = command;
+                commandRetries = 2;
+                commandLastSent = millis();
+                Serial.printf("{\"command_sent\":%lu,\"ok\":%s}\n",
+                              static_cast<unsigned long>(command.commandId), result == ESP_OK ? "true" : "false");
+            }
+            used=0; overflow=false;
+        } else if (ch == '\0') overflow = true;
+        else if (used < sizeof(line)-1) line[used++]=ch;
+        else overflow=true;
     }
 }
 
@@ -105,9 +177,17 @@ void loop() {
         return;
     }
 
+    readCommands();
+    // Same command ID makes retries idempotent on every field node.
+    if (commandRetries && millis() - commandLastSent >= 150) {
+        uint8_t broadcast[] = {255,255,255,255,255,255};
+        esp_now_send(broadcast, (uint8_t *)&pendingCommand, sizeof(pendingCommand));
+        commandLastSent = millis();
+        commandRetries--;
+    }
     MeshPacket packet;
-    //等待接收資料包，如果沒有接收到資料包，則會一直等待，直到接收到資料包為止
-    if (xQueueReceive(rxQueue, &packet, portMAX_DELAY) != pdTRUE) {
+    // Bound the wait so serial commands and retries run even with no telemetry.
+    if (xQueueReceive(rxQueue, &packet, pdMS_TO_TICKS(10)) != pdTRUE) {
         return;
     }
 
@@ -121,7 +201,7 @@ void loop() {
 
         OriginState &slot = originTable[rec.originId];
         bool stale = !slot.everSeen || (millis() - slot.lastSeen > NODE_TIMEOUT_MS);//stale表示斷線
-        if (!stale && !meshSeqNewer(rec.seq, slot.seq)) {
+        if (slot.everSeen && (rec.seq == slot.seq || (!stale && !meshSeqNewer(rec.seq, slot.seq)))) {
             continue;
         }
 
@@ -144,16 +224,16 @@ void loop() {
             snprintf(humidityText, sizeof(humidityText), "%u", rec.humidityPct);
         }
         //組裝成JSON格式的字串，並且把這個字串印出來
-        char jsonBuffer[144];
+        char jsonBuffer[180];
         snprintf(jsonBuffer, sizeof(jsonBuffer),
                  "{\"node_id\":%u,\"smoke\":%u,\"temp\":%s,\"humidity\":%s,"
-                 "\"next_hop\":%d,\"hops\":%u}",
+                 "\"next_hop\":%d,\"hops\":%u,\"sprinkler_flags\":%u}",
                  rec.originId,
                  rec.smokeLevel,
                  tempText,
                  humidityText,
                  rec.nextHop,
-                 rec.hops);
+                 rec.hops, rec.flags);
 
         Serial.println(jsonBuffer);
     }

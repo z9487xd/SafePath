@@ -28,13 +28,17 @@
 // any arrow - the wrong value draws a scrambled picture that still lights up.
 #define MATRIX_SERPENTINE 0
 #define SMOKE_SENSOR_PIN 34
+// Any override must remain distinct from every address, sensor and output pin.
+// GPIO26 is an address pin in the 14-node map and cannot be used for DHT data.
+#ifndef DHT_PIN
 #define DHT_PIN 27
+#endif
 
 
 // DHT22 refuses to be read faster than every 2s.
 #define DHT_INTERVAL_MS 2200
 
-// Bench testing: build with -D FORCE_NODE_ID=2 to skip the MAC lookup.
+// Bench testing: build with -D FORCE_NODE_ID=2 to skip the address-pin lookup.
 #define WIFI_CHANNEL 1
 // Smoke and heat each map to three routing bands, matching the dashboard:
 //   <= CLEAN      cost multiplier 1.0, no effect on routing
@@ -61,6 +65,7 @@ typedef struct {
     uint16_t smoke;
     int16_t  temp;
     uint8_t  humidity;
+    uint8_t flags;
     uint16_t seq;
     int8_t   nextHop;
     uint8_t  hops;
@@ -72,14 +77,41 @@ CRGB leds[NUM_LEDS];
 DHTesp dht;
 uint8_t animFrame = 0;
 unsigned long lastDhtRead = 0;
+uint16_t dhtFailures = 0;
 
 int localNodeId = -1;
 bool meshReady = false;
+static const char *startupError = nullptr;
 uint8_t localMac[6] = {0};
 unsigned long lastIdentityNotice = 0;
 
 NodeState meshTable[NUM_NODES];
 static QueueHandle_t rxQueue = NULL;
+static QueueHandle_t controlQueue = NULL;
+uint32_t seenCommands[32] = {};
+uint8_t seenCommandCursor = 0;
+unsigned long manualStarted = 0;
+bool manualEnabled = false;
+
+void drainControls() {
+    ControlPacket command;
+    while (xQueueReceive(controlQueue, &command, 0) == pdTRUE) {
+        bool seen = false;
+        for (uint32_t id : seenCommands) if (id == command.commandId) seen = true;
+        if (seen) continue;
+        seenCommands[seenCommandCursor++ % 32] = command.commandId;
+        if (command.targetId == localNodeId && NODE_ROLES[localNodeId] == NODE_ROLE_SPRINKLER) {
+            manualEnabled = command.enabled;
+            manualStarted = millis();
+        }
+        if (command.hops < MESH_MAX_HOPS) {
+            command.hops++;
+            uint8_t broadcast[] = {255,255,255,255,255,255};
+            esp_now_send(broadcast, (uint8_t *)&command, sizeof(command));
+        }
+    }
+}
+
 
 unsigned long systemBootTime = 0;
 unsigned long lastLedUpdate = 0;
@@ -146,13 +178,13 @@ int resolveLocalNodeId() {
 // Slow blink plus a repeated serial line, for the two states where this board
 // cannot join the mesh. Distinguishable from a routing result: green means an
 // exit, red means trapped, blue and magenta mean this board needs attention.
-void showStandby(CRGB colour, const char *key) {
+void showStandby(CRGB colour, const char *key, const char *error = nullptr) {
     if (millis() - lastIdentityNotice > 1000) {
         lastIdentityNotice = millis();
         char macText[18];
         formatMac(localMac, macText, sizeof(macText));
-        char outMsg[64];
-        snprintf(outMsg, sizeof(outMsg), "{\"%s\":\"%s\"}", key, macText);
+        char outMsg[128];
+        snprintf(outMsg, sizeof(outMsg), "{\"%s\":\"%s\"}", key, error ? error : macText);
         Serial.println(outMsg);
     }
 
@@ -175,12 +207,21 @@ void onDataReceived(const esp_now_recv_info_t *info, const uint8_t *incomingData
 #else
 void onDataReceived(const uint8_t *mac, const uint8_t *incomingData, int len) {
 #endif
+    if (len == sizeof(ControlPacket) && incomingData[0] == CONTROL_MAGIC) {
+        ControlPacket command;
+        memcpy(&command, incomingData, sizeof(command));
+        if (command.commandId && command.targetId < NUM_NODES &&
+            NODE_ROLES[command.targetId] == NODE_ROLE_SPRINKLER &&
+            command.enabled <= 1 && command.hops <= MESH_MAX_HOPS)
+            xQueueSend(controlQueue, &command, 0);
+        return;
+    }
     //篩選資料包，檢查資料包的長度是否符合MeshPacket的大小，如果不符合就直接return
     if (len < (int)MESH_HEADER_SIZE || len > (int)sizeof(MeshPacket)) {
         return;
     }
 
-    MeshPacket packet;
+    MeshPacket packet = {};
     memcpy(&packet, incomingData, len);
 
     if (packet.magic != MESH_MAGIC || packet.recordCount > MESH_MAX_NODES) {
@@ -204,15 +245,17 @@ void mergeRecord(const MeshRecord &rec) {
 
     NodeState &slot = meshTable[rec.originId];
 
-    // A rebooted node restarts at sequence 0, which looks older than what we
-    // hold. Once it has been silent past the timeout, accept any sequence.
-    if (!isNodeStale(rec.originId) && !meshSeqNewer(rec.seq, slot.seq)) {
+    // A reboot may restart the counter after timeout, but an exact duplicate
+    // must never refresh lastSeen: another relay may still hold that old record.
+    if (slot.everSeen && (rec.seq == slot.seq ||
+        (!isNodeStale(rec.originId) && !meshSeqNewer(rec.seq, slot.seq)))) {
         return;
     }
 
     slot.smoke = rec.smokeLevel;
     slot.temp = rec.tempDeciC;
     slot.humidity = rec.humidityPct;
+    slot.flags = rec.flags;
     slot.seq = rec.seq;
     slot.nextHop = rec.nextHop;
     slot.hops = rec.hops + 1;
@@ -262,6 +305,7 @@ void broadcastMeshTable() {
         rec.smokeLevel = meshTable[i].smoke;
         rec.tempDeciC = meshTable[i].temp;
         rec.humidityPct = meshTable[i].humidity;
+        rec.flags = meshTable[i].flags;
         rec.nextHop = meshTable[i].nextHop;
         rec.hops = (i == localNodeId) ? 0 : meshTable[i].hops;
     }
@@ -570,16 +614,70 @@ void renderLedAnimation(int nextHop, Urgency urgency) {
     animFrame = (animFrame + 1) % (ARROW_STEP_FRAMES * ARROW_STEPS);
 }
 
+// Unweighted shortest corridor distances: danger blocks evacuation, but must
+// never block propagation of a sprinkler trigger. Exits are terminal doors.
+bool nearbyDanger() {
+    float dist[NUM_NODES];
+    bool visited[NUM_NODES] = {};
+    for (int i=0; i<NUM_NODES; i++) dist[i] = INF;
+    dist[localNodeId] = 0;
+    for (int step=0; step<NUM_NODES; step++) {
+        int u=-1;
+        for (int i=0; i<NUM_NODES; i++)
+            if (!visited[i] && (u<0 || dist[i]<dist[u])) u=i;
+        if (u<0 || dist[u]>=SPRINKLER_DISTANCE) break;
+        visited[u]=true;
+        if (!isExitNode(u) && !isNodeStale(u) &&
+            (meshTable[u].smoke >= SMOKE_THRESHOLD ||
+             (meshTable[u].temp != TEMP_UNKNOWN && meshTable[u].temp >= TEMP_BLOCK_DECIC))) return true;
+        if (isExitNode(u)) continue;
+        for (int v=0; v<NUM_NODES; v++)
+            if (BASE_GRAPH[u][v]<INF && dist[u]+BASE_GRAPH[u][v]<dist[v])
+                dist[v]=dist[u]+BASE_GRAPH[u][v];
+    }
+    return false;
+}
+
+void updateSprinkler() {
+    if (NODE_ROLES[localNodeId] != NODE_ROLE_SPRINKLER) return;
+    if (manualEnabled && millis()-manualStarted >= MANUAL_DURATION_MS) manualEnabled=false;
+    bool automatic = nearbyDanger();
+    bool active = automatic || manualEnabled;
+    meshTable[localNodeId].flags = (active ? 1 : 0) | (automatic ? 2 : 0) | (manualEnabled ? 4 : 0);
+    digitalWrite(SPRINKLER_LED_PIN, active ? HIGH : LOW);
+}
+
 void setup() {
     Serial.begin(115200);
+    // Validate before DHT.setup() or pinMode() can drive an address jumper.
+    const uint8_t ioPins[] = {DHT_PIN, SPRINKLER_LED_PIN, LED_PIN, SMOKE_SENSOR_PIN};
+    for (size_t i = 0; i < sizeof(ioPins) / sizeof(ioPins[0]); ++i) {
+        for (size_t j = 0; j < i; ++j) {
+            if (ioPins[i] == ioPins[j]) startupError = "GPIO conflict: sensor/output pins overlap";
+        }
+        for (int bit = 0; bit < ADDR_PIN_COUNT; ++bit) {
+            if (ioPins[i] == ADDR_PINS[bit]) startupError = "GPIO conflict: sensor/output overlaps address pins";
+        }
+    }
+    for (int bit = 0; bit < ADDR_PIN_COUNT; ++bit)
+        for (int other = 0; other < bit; ++other)
+            if (ADDR_PINS[bit] == ADDR_PINS[other]) startupError = "GPIO conflict: duplicate address pins";
+    if (startupError) {
+        Serial.println(startupError);
+        return;
+    }
+    pinMode(SPRINKLER_LED_PIN, OUTPUT);
+    digitalWrite(SPRINKLER_LED_PIN, LOW);
     systemBootTime = millis();
     pinMode(SMOKE_SENSOR_PIN, INPUT);
 
-    FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-    FastLED.setBrightness(10);
+
     dht.setup(DHT_PIN, DHTesp::DHT22);
 
-    WiFi.mode(WIFI_STA);
+    if (!WiFi.mode(WIFI_STA)) {
+        startupError = "WiFi station init failed";
+        return;
+    }
     WiFi.disconnect();
     WiFi.macAddress(localMac);
 
@@ -588,6 +686,10 @@ void setup() {
         return;
     }
 
+    if (NODE_ROLES[localNodeId] == NODE_ROLE_ARROW) {
+        FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+        FastLED.setBrightness(10);
+    }
     char macText[18];
     formatMac(localMac, macText, sizeof(macText));
     char bootMsg[64];
@@ -598,6 +700,7 @@ void setup() {
         meshTable[i].smoke = 0;
         meshTable[i].temp = TEMP_UNKNOWN;
         meshTable[i].humidity = HUMIDITY_UNKNOWN;
+        meshTable[i].flags = 0;
         meshTable[i].seq = 0;
         meshTable[i].nextHop = NEXT_HOP_TRAPPED;
         meshTable[i].hops = 0;
@@ -607,22 +710,29 @@ void setup() {
     meshTable[localNodeId].everSeen = true;
     //建立一個queue，這個queue是用來接收esp-now的資料包的，這個queue的大小是RX_QUEUE_DEPTH，這個queue的元素大小是MeshPacket
     rxQueue = xQueueCreate(RX_QUEUE_DEPTH, sizeof(MeshPacket));
-    if (rxQueue == NULL) {
-        Serial.println("RX queue creation failed");
+    controlQueue = xQueueCreate(8, sizeof(ControlPacket));
+    if (rxQueue == NULL || controlQueue == NULL) {
+        startupError = "RX queue creation failed";
+        Serial.println(startupError);
         return;
     }
     // 設定WiFi為promiscuous模式，並設定頻道為WIFI_CHANNEL，然後再關閉promiscuous模式
-    esp_wifi_set_promiscuous(true);
-    esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
-    esp_wifi_set_promiscuous(false);
+    if (esp_wifi_set_promiscuous(true) != ESP_OK ||
+        esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE) != ESP_OK ||
+        esp_wifi_set_promiscuous(false) != ESP_OK) {
+        startupError = "WiFi channel setup failed";
+        return;
+    }
 
     if (esp_now_init() != ESP_OK) {
-        Serial.println("ESP-NOW init failed");
+        startupError = "ESP-NOW init failed";
+        Serial.println(startupError);
         return;
     }
 
     if (esp_now_register_recv_cb(onDataReceived) != ESP_OK) {
-        Serial.println("ESP-NOW receive callback registration failed");
+        startupError = "ESP-NOW receive callback registration failed";
+        Serial.println(startupError);
         return;
     }
 
@@ -635,7 +745,8 @@ void setup() {
     peerInfo.channel = WIFI_CHANNEL;
     peerInfo.encrypt = false;
     if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-        Serial.println("ESP-NOW broadcast peer registration failed");
+        startupError = "ESP-NOW broadcast peer registration failed";
+        Serial.println(startupError);
         return;
     }
     //計算出下一個跳點，並且把下一個跳點存到meshTable裡面
@@ -646,6 +757,7 @@ void setup() {
 
 void runNode() {
     drainRxQueue();
+    drainControls();
 
     uint16_t rawSmoke = readSensorSmoke();
     uint16_t validatedSmoke = 0;
@@ -662,9 +774,23 @@ void runNode() {
         if (dht.getStatus() == DHTesp::ERROR_NONE) {
             meshTable[localNodeId].temp = (int16_t)lroundf(reading.temperature * 10.0f);
             meshTable[localNodeId].humidity = (uint8_t)lroundf(reading.humidity);
+            if (dhtFailures > 0) {
+                char msg[72];
+                snprintf(msg, sizeof(msg), "{\"dht_recovered_after\":%u,\"node_id\":%d}",
+                         dhtFailures, localNodeId);
+                Serial.println(msg);
+                dhtFailures = 0;
+            }
         } else {
             meshTable[localNodeId].temp = TEMP_UNKNOWN;
             meshTable[localNodeId].humidity = HUMIDITY_UNKNOWN;
+            // The gateway only ever shows null, which cannot tell a missing wire
+            // (TIMEOUT) from a noisy one (CHECKSUM). Once per read, every ~2s.
+            dhtFailures++;
+            char msg[80];
+            snprintf(msg, sizeof(msg), "{\"dht_failed\":\"%s\",\"count\":%u,\"node_id\":%d}",
+                     dht.getStatusString(), dhtFailures, localNodeId);
+            Serial.println(msg);
         }
     }
 
@@ -673,6 +799,17 @@ void runNode() {
         cachedNextHop = solveNextHop(localNodeId);
         meshTable[localNodeId].nextHop = (int8_t)cachedNextHop;
     }
+
+#ifndef BENCH_LIVE_MASK
+    // 每秒印自己的讀值與燈號等級，校正 MQ-2 底線用（0 綠 / 1 琥珀 / 2 紅）
+    static uint32_t lastSelfLog = 0;
+    if (millis() - lastSelfLog > 1000) {
+        lastSelfLog = millis();
+        Serial.printf("{\"self\":%d,\"raw_smoke\":%u,\"temp\":%d,\"urgency\":%d,\"next\":%d}\n",
+                      localNodeId, rawSmoke, meshTable[localNodeId].temp,
+                      (int)localUrgency(), cachedNextHop);
+    }
+#endif
 
 #ifdef BENCH_LIVE_MASK
     // 桌上測試用：每秒印自己的讀值、下一跳、以及收到的其他實體板子的讀值與成本倍率
@@ -693,6 +830,8 @@ void runNode() {
     }
 #endif
 
+    updateSprinkler();
+
     if (millis() - lastBroadcastTime > broadcastInterval) {
         lastBroadcastTime = millis();
         broadcastInterval = 180 + (uint16_t)(esp_random() % 41);
@@ -701,7 +840,7 @@ void runNode() {
     }
 
     Urgency urgency = localUrgency();
-    if (millis() - lastLedUpdate > LED_FRAME_MS[urgency]) {
+    if (NODE_ROLES[localNodeId] == NODE_ROLE_ARROW && millis() - lastLedUpdate > LED_FRAME_MS[urgency]) {
         lastLedUpdate = millis();
         renderLedAnimation(cachedNextHop, urgency);
         FastLED.show();
@@ -709,7 +848,9 @@ void runNode() {
 }
 
 void loop() {
-    if (localNodeId < 0) {
+    if (startupError != nullptr) {
+        showStandby(CRGB::Magenta, "startup_error", startupError);
+    } else if (localNodeId < 0) {
         // Address pins unset or set to a value no board can have. topology.h
         // lists which pins this board should have tied to GND.
         showStandby(CRGB::Blue, "bad_address");

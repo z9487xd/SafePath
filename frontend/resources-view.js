@@ -94,6 +94,7 @@
     }
 
     function switchView(view) {
+      el("kpi-row").classList.toggle("hidden", view !== "monitor");
       const idMap = { monitor: "app", resources: "resources-view", hydrants: "hydrants-view" };
       Object.values(idMap).forEach(id =>
       el(id).classList.toggle("hidden", id !== idMap[view])

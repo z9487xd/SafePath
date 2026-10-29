@@ -24,50 +24,35 @@ import math
 # and boot-strapping pins. N pins address 2^N - 1 nodes, so this list supports
 # far more nodes than it has entries.
 ADDR_PIN_POOL = [32, 33, 25, 26, 14, 4]
-# 初賽 4 節點版（2026-09-25）。離出口最近的節點永遠直走出口不會轉向，
-# 所以 4 節點最多 3 個會轉向，這個形狀達到上限：
-#
-#   N3 ─── N2 ─── N4
-#     ╲    │      │
-#       ╲  │      │  EX2 走廊故意拉長到 350，
-#   EX1 ── N1     │  讓 N4 平常走左邊（300），N1/N2 冒煙約 1160 就改走 EX2
-#                 │
-#                EX2
-#
-# 煙越濃轉的越多：N1 smoke≈1160 → N4 ←變↓；N1 封死 → N2 ↓變→、N3 ↘變→。
-# 兩板測試 bench_n1n2 仍可用：N1 封死（≥2000）時 N2 轉向。
+# Coordinates follow image.png; distances are image/map units, not metres.
+SPRINKLER_DISTANCE = 400.0  # strict shortest-corridor distance < this value
+SPRINKLER_LED_PIN = 14  # same header side as GPIO13/27/32/33/25/26
 nodes_data = {
-    "EX1": {"x": 100, "y": 200, "type": "exit"},
-    "N1":  {"x": 200, "y": 200, "type": "node"},
-    "N2":  {"x": 200, "y": 100, "type": "node"},
-    "N3":  {"x": 100, "y": 100, "type": "node"},
-    "N4":  {"x": 300, "y": 100, "type": "node"},
-    "EX2": {"x": 300, "y": 450, "type": "exit"},
+    "EXA": {"x": 1184, "y": 640, "type": "exit"},
+    "1": {"x": 276, "y": 268, "type": "sprinkler"},
+    "2": {"x": 517, "y": 268, "type": "sensor"},
+    "3": {"x": 276, "y": 663, "type": "arrow"},
+    "4": {"x": 276, "y": 1096, "type": "arrow"},
+    "5": {"x": 276, "y": 1484, "type": "sprinkler"},
+    "6": {"x": 507, "y": 637, "type": "sprinkler"},
+    "7": {"x": 834, "y": 637, "type": "arrow"},
+    "8": {"x": 1026, "y": 637, "type": "sprinkler"},
+    "9": {"x": 1136, "y": 975, "type": "arrow"},
+    "10": {"x": 1136, "y": 1290, "type": "sprinkler"},
+    "11": {"x": 487, "y": 1195, "type": "sprinkler"},
+    "12": {"x": 713, "y": 1070, "type": "arrow"},
+    "13": {"x": 713, "y": 1387, "type": "sprinkler"},
+    "14": {"x": 1004, "y": 1070, "type": "sprinkler"},
+    "EXB": {"x": 1184, "y": 1421, "type": "exit"},
+    "EXC": {"x": 385, "y": 1540, "type": "exit"},
 }
-
 raw_edges = [
-    ("EX1", "N1"),
-    ("EX2", "N4"),
-    ("N1", "N2"),
-    ("N1", "N3"),
-    ("N2", "N3"),
-    ("N2", "N4"),
+    ("1", "2"), ("1", "3"), ("3", "4"), ("4", "5"),
+    ("3", "6"), ("6", "7"), ("7", "8"), ("8", "EXA"),
+    ("EXA", "9"), ("9", "10"), ("10", "EXB"),
+    ("4", "11"), ("11", "12"), ("12", "7"),
+    ("12", "14"), ("14", "9"), ("12", "13"), ("13", "EXC"),
 ]
-
-# 決賽 5 節點版，進決賽時把上面兩段換回這個：
-# nodes_data = {
-#     "EX1": {"x": 50,  "y": 100, "type": "exit"},
-#     "N1":  {"x": 150, "y": 100, "type": "node"},
-#     "N2":  {"x": 250, "y": 100, "type": "node"},
-#     "N3":  {"x": 350, "y": 100, "type": "node"},
-#     "N4":  {"x": 350, "y": 200, "type": "node"},
-#     "N5":  {"x": 250, "y": 200, "type": "node"},
-#     "EX2": {"x": 450, "y": 200, "type": "exit"},
-# }
-# raw_edges = [
-#     ("EX1", "N1"), ("EX2", "N4"), ("N1", "N2"), ("N2", "N3"),
-#     ("N1", "N5"), ("N2", "N5"), ("N3", "N5"), ("N4", "N5"),
-# ]
 
 def calculate_edge_weight(p1, p2, positions):
     x1, y1 = positions[p1]["x"], positions[p1]["y"]
@@ -108,7 +93,7 @@ def arrow_report(adjacency, sensors):
 
 # Must match MESH_MAX_NODES in firmware/shared/mesh_protocol.h. Caught here so
 # the message says what is wrong, instead of a static_assert deep in a C++ build.
-MESH_MAX_NODES = 24
+MESH_MAX_NODES = 22
 
 
 def build_adjacency():
@@ -249,6 +234,8 @@ def generate_topology():
 
     # For the backend and the dashboard
     json_payload = {
+        "sprinkler_distance": SPRINKLER_DISTANCE,
+        "sprinkler_led_pin": SPRINKLER_LED_PIN,
         "nodes": [
             {"id": k, "index": node_to_idx[k], "x": v["x"], "y": v["y"], "type": v["type"]}
             for k, v in nodes_data.items()
@@ -271,7 +258,7 @@ def generate_topology():
         ui, vi = node_to_idx[u], node_to_idx[v]
 
         # Corridors are two-way, so the distance matrix is symmetric
-        cost_str = f"{w:.1f}f"
+        cost_str = f"{w:.5f}f"
         dist_matrix[ui][vi] = cost_str
         dist_matrix[vi][ui] = cost_str
 
@@ -301,11 +288,13 @@ def generate_topology():
 
     # Each board reads its own index as a binary number off the address pins,
     # so the wiring table belongs next to the numbering it comes from.
-    addr_bits = max(1, (num_nodes - 1).bit_length())
+    addr_bits = max(1, max(node_to_idx[k] for k in sensors).bit_length())
     if addr_bits > len(ADDR_PIN_POOL):
         raise ValueError(f"{num_nodes} nodes need {addr_bits} address pins, "
                          f"pool only has {len(ADDR_PIN_POOL)}")
     addr_pins = ADDR_PIN_POOL[:addr_bits]
+    if SPRINKLER_LED_PIN in addr_pins or SPRINKLER_LED_PIN in (13, 27, 34):
+        raise ValueError("sprinkler LED pin conflicts with an address or sensor pin")
 
     header_lines.append(f"#define ADDR_PIN_COUNT {addr_bits}")
     header_lines.append(f"const uint8_t ADDR_PINS[ADDR_PIN_COUNT] = {{ "
@@ -321,6 +310,15 @@ def generate_topology():
         header_lines.append(f"//   {k} = {idx}  ->  " + " + ".join(wires))
     header_lines.append("")
 
+    roles = {"exit": 0, "arrow": 1, "sprinkler": 2, "sensor": 3}
+    header_lines.extend([
+        "#define NODE_ROLE_ARROW 1", "#define NODE_ROLE_SPRINKLER 2",
+        "#define NODE_ROLE_SENSOR 3",
+        f"#define SPRINKLER_DISTANCE {SPRINKLER_DISTANCE:.1f}f",
+        f"#define SPRINKLER_LED_PIN {SPRINKLER_LED_PIN}",
+        "const uint8_t NODE_ROLES[NUM_NODES] = { " +
+        ", ".join(str(roles[nodes_data[k]["type"]]) for k in node_keys) + " };", "",
+    ])
     header_lines.append("// Corridor lengths in map units. INF means no corridor.")
     header_lines.append("const float BASE_GRAPH[NUM_NODES][NUM_NODES] = {")
     for row in dist_matrix:

@@ -8,16 +8,16 @@
     const SVG_NS = "http://www.w3.org/2000/svg";
     const NODE_R = 40;
     const EXIT_SIZE = 80;
-    const SPRINKLER_STROKE_WIDTH = 8; // Active sprinkler border, in screen pixels.
+    const SPRINKLER_STROKE_WIDTH = 5; // Active sprinkler border, in screen pixels.
 
     // Status is encoded three ways at once: colour, glyph, and a word. Red and
     // green are indistinguishable to many people, so colour can never be alone.
     const STATUS = {
       NORMAL:  { color:"var(--node)",     glyph:"·", label:"正常" },
-      WARNING: { color:"var(--warning)",  glyph:"!", label:"警示" },
+      WARNING: { color:"var(--warning)",  ink:"#1a1300", glyph:"!", label:"警示" },
       HAZARD:  { color:"var(--critical)", glyph:"✕", label:"危險阻斷" },
       OFFLINE: { color:"var(--offline)",  glyph:"?", label:"斷線" },
-      EXIT:    { color:"var(--good)",     glyph:"✓", label:"安全出口" },
+      EXIT:    { color:"var(--good)",     ink:"var(--exit-ink)", glyph:"✓", label:"安全出口" },
       UNKNOWN: { color:"var(--line-strong)", glyph:"·", label:"等待資料" }
     };
 
@@ -160,15 +160,19 @@
       const meta = statusOf(id);
 
       shape.setAttribute("fill", meta.color);
+      shape.style.filter = "";
+      const nodeLabel = el(`label-${id}`);
+      if (nodeLabel) nodeLabel.style.fill = meta.ink || "";
       if (isSprinkler(id) && state?.status !== "OFFLINE" && state?.sprinkler_active) {
-        shape.setAttribute("stroke", "#ffe600");
+        shape.setAttribute("stroke", "var(--ring)");
         shape.style.strokeWidth = `${SPRINKLER_STROKE_WIDTH}px`;
+        shape.style.filter = "drop-shadow(0 0 5px var(--ring))";
       }
       if (id === selectedNodeId && !(isSprinkler(id) && state?.status !== "OFFLINE" && state?.sprinkler_active)) {
-        shape.setAttribute("stroke", "#ffffff");
+        shape.setAttribute("stroke", "var(--select-stroke)");
         shape.style.strokeWidth = "3px";
       } else if (!(isSprinkler(id) && state?.status !== "OFFLINE" && state?.sprinkler_active)) {
-        shape.setAttribute("stroke", "rgba(255,255,255,.16)");
+        shape.setAttribute("stroke", "var(--node-outline)");
         shape.style.strokeWidth = "2px";
       }
       if (state && state.status === "OFFLINE") {
@@ -291,7 +295,11 @@
         let row = el(`table-row-${id}`);
         if (!row) {
           row = document.createElement("tr"); row.id = `table-row-${id}`;
+          row.tabIndex = 0;
           row.addEventListener("click", event => { if (!event.target.closest("button")) selectNode(id); });
+          row.addEventListener("keydown", event => {
+            if (event.target === row && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); selectNode(id); }
+          });
           for (const cls of ["id", "num mono", "num mono", "num mono", "mono", "", "table-controls"]) {
             const cell = document.createElement("td");cell.className = cls;row.appendChild(cell);
           }
@@ -461,6 +469,7 @@
         label.setAttribute("x", node.x);
         label.setAttribute("y", node.y + 4);
         label.setAttribute("class", "node-label");
+        label.setAttribute("id", `label-${id}`);
         label.textContent = id;
         g.appendChild(label);
 
@@ -482,6 +491,12 @@
         glyph.setAttribute("class", "badge-glyph");
         g.appendChild(glyph);
 
+        shape.setAttribute("tabindex", "0");
+        shape.setAttribute("role", "button");
+        shape.setAttribute("aria-label", `${id} 號節點，查看詳細資料`);
+        shape.addEventListener("keydown", evt => {
+          if (evt.key === "Enter" || evt.key === " ") { evt.preventDefault(); selectNode(id); }
+        });
         shape.addEventListener("click", () => selectNode(id));
         shape.addEventListener("mousemove", evt => showTooltip(id, evt));
         shape.addEventListener("mouseleave", hideTooltip);

@@ -34,10 +34,10 @@ NEXT_HOP_TRAPPED = -1
 # the final scenario includes heat-only danger to exercise thermal rerouting.
 # Profiles: node -> (peak smoke ADC, peak temperature C).
 SCENARIOS = (
-    {"6": (2600, 66.0), "13": (2600, 66.0)},
-    {"8": (2600, 66.0), "11": (2600, 66.0)},
-    {"6": (2600, 66.0), "14": (2600, 66.0)},
-    {"7": (700, 68.0), "13": (2600, 66.0)},
+    {"6": (2600, 66.0), "9": (2600, 66.0)},
+    {"8": (2600, 66.0), "10": (2600, 66.0)},
+    {"6": (2600, 66.0), "5": (2600, 66.0)},
+    {"7": (700, 68.0), "9": (2600, 66.0)},
 )
 SCENARIO_SECONDS = 48
 CYCLE_SECONDS = SCENARIO_SECONDS * len(SCENARIOS)

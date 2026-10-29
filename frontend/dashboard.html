@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SafePath 現場監控台</title>
 
-<link rel="stylesheet" href="/static/dashboard.css?v=20261029-5">
+<script>try{var t=localStorage.getItem("safepath-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<link rel="stylesheet" href="/static/dashboard.css?v=20261029-9">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
@@ -13,10 +14,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 </head>
 <body>
-  <div id="view-tabs">
-    <button class="view-tab active" id="tab-monitor" data-view="monitor">即時監控</button>
-    <button class="view-tab" id="tab-resources" data-view="resources">災後應變與職安資源</button>
-    <button class="view-tab" id="tab-hydrants" data-view="hydrants">消防栓地圖</button>
+  <div id="view-tabs" role="tablist" aria-label="主要頁面">
+    <button class="view-tab active" id="tab-monitor" role="tab" aria-selected="true" data-view="monitor">即時監控</button>
+    <button class="view-tab" id="tab-resources" role="tab" aria-selected="false" data-view="resources">災後應變與職安資源</button>
+    <button class="view-tab" id="tab-hydrants" role="tab" aria-selected="false" data-view="hydrants">消防栓地圖</button>
   </div>
       <header>
         <div class="brand">
@@ -25,6 +26,7 @@
         </div>
         <div class="header-meta">
           <span class="pill" id="source-pill">資料來源未知</span>
+          <button type="button" class="pill" id="theme-toggle" aria-label="切換深色／淺色模式">主題</button>
           <span class="pill" id="conn-pill"><span class="dot"></span><span id="conn-text">未連線</span></span>
         </div>
       </header>
@@ -66,18 +68,18 @@
         <svg id="factory-svg" viewBox="0 0 400 400" role="img" aria-label="場域地圖與即時逃生路徑">
           <defs>
             <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1A222D" stroke-width="0.5"/>
+              <path class="grid-path" d="M 20 0 L 0 0 0 20" fill="none" stroke-width="0.5"/>
             </pattern>
             <radialGradient id="heat">
               <stop offset="0%" stop-color="#d03b3b" stop-opacity="0.42"/>
               <stop offset="60%" stop-color="#d03b3b" stop-opacity="0.13"/>
               <stop offset="100%" stop-color="#d03b3b" stop-opacity="0"/>
             </radialGradient>
-            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
-              <path d="M1 1L9 5L1 9" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linecap="round"/>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="20" markerHeight="20" markerUnits="userSpaceOnUse" orient="auto">
+              <path d="M1 1L9 5L1 9" fill="none" stroke="var(--path)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
             </marker>
           </defs>
-          <rect width="400" height="400" fill="#10161E"/>
+          <rect class="map-bg" width="400" height="400"/>
           <rect width="400" height="400" fill="url(#grid)"/>
           <g id="layer-heat"></g>
           <g id="layer-edges"></g>
@@ -94,7 +96,7 @@
         <span class="legend-item"><i class="role-key sensor-key"></i>僅感測</span>
         <span class="legend-item"><i class="status-dot"></i>正常</span>
         <span class="legend-item"><i class="status-dot danger"></i>危險</span>
-        <span class="legend-item">黃環：撒水啟動</span>
+        <span class="legend-item">青環：撒水啟動</span>
       </div>
     </div>
 
@@ -117,7 +119,7 @@
       </section>
       <section class="panel-section" id="alerts-section">
         <div class="panel-header">法規與應變 SOP<span class="count" id="alert-count"></span></div>
-        <div class="panel-body"><div id="alerts-list"><div class="empty-state">系統正常，持續監控中</div></div></div>
+        <div class="panel-body"><div id="alerts-list" aria-live="polite"><div class="empty-state">系統正常，持續監控中</div></div></div>
       </section>
     </aside>
     <details id="node-details">
@@ -145,10 +147,10 @@
   </div>
 
   <div id="resources-view" class="hidden">
-    <div id="sub-tabs">
-      <button class="sub-tab active" id="subtab-notify" data-subview="notify">罹災通報比對</button>
-      <button class="sub-tab" id="subtab-case" data-subview="case">職災勞工個案服務窗口</button>
-      <button class="sub-tab" id="subtab-courses" data-subview="courses">職安素養學習資源</button>
+    <div id="sub-tabs" role="tablist" aria-label="資源類別">
+      <button class="sub-tab active" id="subtab-notify" role="tab" aria-selected="true" data-subview="notify">罹災通報比對</button>
+      <button class="sub-tab" id="subtab-case" role="tab" aria-selected="false" data-subview="case">職災勞工個案服務窗口</button>
+      <button class="sub-tab" id="subtab-courses" role="tab" aria-selected="false" data-subview="courses">職安素養學習資源</button>
     </div>
 
     <section class="res-card res-subview" id="subview-notify">
@@ -218,9 +220,24 @@
   </div>
   <div id="hydrant-map"></div>
   </div>
-<script src="/static/mesh-view.js?v=20261029-5"></script>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById("theme-toggle");
+  var mq=window.matchMedia("(prefers-color-scheme: light)");
+  function current(){ return root.getAttribute("data-theme")||(mq.matches?"light":"dark"); }
+  function label(){ btn.textContent=current()==="dark"?"\u263E 深色":"\u2600 淺色"; }
+  btn.addEventListener("click",function(){
+    var next=current()==="dark"?"light":"dark";
+    root.setAttribute("data-theme",next);
+    try{localStorage.setItem("safepath-theme",next);}catch(e){}
+    label();
+  });
+  label();
+})();
+</script>
+<script src="/static/mesh-view.js?v=20261029-9"></script>
 <script src="/static/disaster-map.js"></script>
-<script src="/static/resources-view.js?v=20261029-5"></script>
+<script src="/static/resources-view.js?v=20261029-9"></script>
 
 </body>
 </html>

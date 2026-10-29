@@ -102,6 +102,7 @@
       el("tab-monitor").classList.toggle("active", view === "monitor");
       el("tab-resources").classList.toggle("active", view === "resources");
       el("tab-hydrants").classList.toggle("active", view === "hydrants");
+      ["monitor", "resources", "hydrants"].forEach(v => el(`tab-${v}`).setAttribute("aria-selected", String(v === view)));
 
       if (view === "hydrants") window.SafePathHydrantMap.show();
     }
@@ -113,6 +114,7 @@
       SUBVIEWS.forEach(v => {
         el(`subview-${v}`).classList.toggle("hidden", v !== name);
         el(`subtab-${v}`).classList.toggle("active", v === name);
+        el(`subtab-${v}`).setAttribute("aria-selected", String(v === name));
       });
     }
 

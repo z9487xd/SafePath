@@ -13,13 +13,10 @@ import os
 import json
 import math
 
-# Dictionary order defines the node numbering used by the firmware (ID_EX1 = 0,
-# ID_N1 = 1, ...), so reordering these lines renumbers every board and changes
-# which address jumpers each board needs.
-
-
-
-
+# Site map: physical nodes 1..10 plus virtual exits EXA/C.
+# Dictionary order defines firmware IDs: ID_EXA = 0, ID_1 = 1, ...,
+# ID_10 = 10, ID_EXC = 11. Reordering entries changes board IDs
+# and their address jumpers. Node types are arrow, sprinkler, sensor and exit.
 # Free GPIOs used to encode the node number in binary. Avoids the LED, sensor
 # and boot-strapping pins. N pins address 2^N - 1 nodes, so this list supports
 # far more nodes than it has entries.
@@ -29,29 +26,32 @@ SPRINKLER_DISTANCE = 400.0  # strict shortest-corridor distance < this value
 SPRINKLER_LED_PIN = 14  # same header side as GPIO13/27/32/33/25/26
 nodes_data = {
     "EXA": {"x": 1184, "y": 640, "type": "exit"},
-    "1": {"x": 276, "y": 268, "type": "sprinkler"},
-    "2": {"x": 517, "y": 268, "type": "sensor"},
-    "3": {"x": 276, "y": 663, "type": "arrow"},
-    "4": {"x": 276, "y": 1096, "type": "arrow"},
-    "5": {"x": 276, "y": 1484, "type": "sprinkler"},
-    "6": {"x": 507, "y": 637, "type": "sprinkler"},
-    "7": {"x": 834, "y": 637, "type": "arrow"},
-    "8": {"x": 1026, "y": 637, "type": "sprinkler"},
-    "9": {"x": 1136, "y": 975, "type": "arrow"},
-    "10": {"x": 1136, "y": 1290, "type": "sprinkler"},
-    "11": {"x": 487, "y": 1195, "type": "sprinkler"},
-    "12": {"x": 713, "y": 1070, "type": "arrow"},
-    "13": {"x": 713, "y": 1387, "type": "sprinkler"},
-    "14": {"x": 1004, "y": 1070, "type": "sprinkler"},
-    "EXB": {"x": 1184, "y": 1421, "type": "exit"},
+    "1": {"x": 276, "y": 663, "type": "arrow"},
+    "2": {"x": 276, "y": 1096, "type": "arrow"},
+    "3": {"x": 507, "y": 637, "type": "sprinkler"},
+    "4": {"x": 834, "y": 637, "type": "arrow"},
+    "5": {"x": 276, "y": 837, "type": "sprinkler"},
+    "6": {"x": 1004, "y": 1070, "type": "arrow"},
+    "7": {"x": 487, "y": 1195, "type": "sprinkler"},
+    "8": {"x": 713, "y": 1070, "type": "arrow"},
+    "9": {"x": 713, "y": 1387, "type": "sprinkler"},
+    "10": {"x": 1136, "y": 975, "type": "sprinkler"},
     "EXC": {"x": 385, "y": 1540, "type": "exit"},
 }
 raw_edges = [
-    ("1", "2"), ("1", "3"), ("3", "4"), ("4", "5"),
-    ("3", "6"), ("6", "7"), ("7", "8"), ("8", "EXA"),
-    ("EXA", "9"), ("9", "10"), ("10", "EXB"),
-    ("4", "11"), ("11", "12"), ("12", "7"),
-    ("12", "14"), ("14", "9"), ("12", "13"), ("13", "EXC"),
+    ("1", "3"),
+    ("3", "4"),
+    ("1", "5"),
+    ("2", "5"),
+    ("EXA", "10"),
+    ("4", "EXA"),
+    ("2", "7"),
+    ("7", "8"),
+    ("8", "4"),
+    ("8", "6"),
+    ("10", "6"),
+    ("8", "9"),
+    ("9", "EXC"),
 ]
 
 def calculate_edge_weight(p1, p2, positions):

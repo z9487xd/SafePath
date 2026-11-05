@@ -3,8 +3,9 @@
 struct CRGB {
     enum { Black = 0, Red = 0xff0000, Green = 0x00ff00, Blue = 0x0000ff, Magenta = 0xff00ff };
     int value;
-    CRGB(int colour = 0) : value(colour) {}
-    CRGB(int r, int g, int b) : value((r << 16) | (g << 8) | b) {}
+    uint8_t r, g, b;
+    CRGB(int colour = 0) : value(colour), r((colour >> 16) & 255), g((colour >> 8) & 255), b(colour & 255) {}
+    CRGB(int red, int green, int blue) : value((red << 16) | (green << 8) | blue), r(red), g(green), b(blue) {}
 };
 enum { WS2812B, GRB };
 struct TestLED {

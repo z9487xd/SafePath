@@ -1,3 +1,6 @@
+// pio run -d firmware/node -e esp32dev -t upload --upload-port /dev/ttyUSB0
+// pio device monitor --port /dev/ttyUSB0 --baud 115200
+//9 6 1 2 8 4 7 3
 // Sensor node firmware.
 //
 // Each node reads its own smoke sensor, broadcasts its whole known table over
@@ -23,6 +26,7 @@
 // of the site map, so the arrows in topology.h point the right way.
 #define MATRIX_SIZE 8
 #define NUM_LEDS (MATRIX_SIZE * MATRIX_SIZE)
+#define MATRIX_BRIGHTNESS 10
 // How the data line runs through the panel. 0: every row left to right.
 // 1: serpentine, odd rows run right to left. Check the module before trusting
 // any arrow - the wrong value draws a scrambled picture that still lights up.
@@ -37,6 +41,8 @@
 
 // DHT22 refuses to be read faster than every 2s.
 #define DHT_INTERVAL_MS 2200
+// Serial Monitor pin snapshots, in milliseconds. Sensor reads keep their own rate.
+#define PIN_DEBUG_INTERVAL_MS 1000
 
 // Bench testing: build with -D FORCE_NODE_ID=2 to skip the address-pin lookup.
 #define WIFI_CHANNEL 1
@@ -47,7 +53,7 @@
 // A node's cost is whichever of the two is worse, so either signal alone can
 // close a corridor. Both pairs need calibrating against the real site.
 #define SMOKE_CLEAN 800
-#define SMOKE_THRESHOLD 2000
+#define SMOKE_THRESHOLD 1800
 #define TEMP_CLEAN_DECIC 400 // 40.0C
 #define TEMP_BLOCK_DECIC 600
 #define HAZARD_GAIN 2.0f
@@ -78,6 +84,12 @@ DHTesp dht;
 uint8_t animFrame = 0;
 unsigned long lastDhtRead = 0;
 uint16_t dhtFailures = 0;
+bool ioPinsConfigured = false;
+bool addressPinsConfigured = false;
+bool matrixInitialized = false;
+bool hasSmokeReading = false;
+uint16_t latestRawSmoke = 0;
+unsigned long lastPinDebug = 0;
 
 int localNodeId = -1;
 bool meshReady = false;
@@ -147,14 +159,15 @@ bool isExitNode(int node) {
 // 算自己的node id，這個id是用來辨識自己是哪一個node，這個id是透過讀取ADDR_PINS陣列裡面的腳位來決定的，這些腳位是用來接地的，接地代表1，沒接地代表0，這樣就可以用二進位的方式來表示node id。
 int resolveLocalNodeId() {
     int id = 0;
-#ifdef FORCE_NODE_ID
-    id = FORCE_NODE_ID;
-#else
     for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
         pinMode(ADDR_PINS[bit], INPUT_PULLUP);
     }
+    addressPinsConfigured = true;
     delay(5);
 
+#ifdef FORCE_NODE_ID
+    id = FORCE_NODE_ID;
+#else
     for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
         if (digitalRead(ADDR_PINS[bit]) == LOW) {
             id |= (1 << bit);
@@ -614,6 +627,134 @@ void renderLedAnimation(int nextHop, Urgency urgency) {
     animFrame = (animFrame + 1) % (ARROW_STEP_FRAMES * ARROW_STEPS);
 }
 
+// Read configured pins without changing their mode, driving an output, or
+// requesting another DHT transaction. Each line is valid JSON for log tools.
+void logPinDebug() {
+    const unsigned long now = millis();
+    if (now - lastPinDebug < PIN_DEBUG_INTERVAL_MS) return;
+    lastPinDebug = now;
+
+    const bool validId = localNodeId >= 0 && localNodeId < NUM_NODES;
+    const NodeState *self = validId ? &meshTable[localNodeId] : nullptr;
+    const uint8_t role = validId ? NODE_ROLES[localNodeId] : 0;
+    const char *roleName = role == NODE_ROLE_ARROW ? "arrow" :
+                           role == NODE_ROLE_SPRINKLER ? "sprinkler" :
+                           role == NODE_ROLE_SENSOR ? "sensor" : "unassigned";
+    const char *state = startupError ? "startup_error" :
+                        !validId ? "bad_address" : !meshReady ? "mesh_init_failed" : "running";
+    // Invalid-address and radio-failure states do not run the normal sensor
+    // loop. Still expose the ADC once a second if pin validation succeeded.
+    if (ioPinsConfigured && !meshReady) {
+        latestRawSmoke = readSensorSmoke();
+        hasSmokeReading = true;
+    }
+    const int flags = self ? self->flags : 0;
+    const bool warmingUp = now - systemBootTime <= SENSOR_WARMUP_MS;
+    const int urgency = self && meshReady ? (int)localUrgency() : -1;
+    int liveNodes = 0;
+    if (meshReady)
+        for (int i = 0; i < NUM_NODES; i++)
+            if (!isExitNode(i) && !isNodeStale(i)) liveNodes++;
+
+    // Separate snapshots while keeping one compact JSON object per line.
+    Serial.print("\n");
+    Serial.printf("{\"pin_debug\":\"node\",\"ms\":%lu,\"self\":%d,\"role\":\"%s\","
+                  "\"state\":\"%s\",\"raw_smoke\":", now, localNodeId, roleName, state);
+    if (hasSmokeReading) Serial.print(latestRawSmoke); else Serial.print("null");
+    Serial.printf(",\"temp\":%d,\"urgency\":%d,\"next\":%d,\"mesh_ready\":%s,"
+                  "\"live_nodes\":%d,\"send_failures\":%u}\n",
+                  self ? self->temp : TEMP_UNKNOWN, urgency, cachedNextHop,
+                  meshReady ? "true" : "false", liveNodes, sendFailures);
+
+    // Raw pin levels are independent of sensor replies and the node's role.
+    // An unplugged DHT or LED still has a GPIO level; it is not a presence test.
+    const uint8_t digitalPins[] = {LED_PIN, SPRINKLER_LED_PIN, DHT_PIN};
+    Serial.print("{\"pin_debug\":\"gpio\",\"levels\":{");
+    bool firstPin = true;
+    for (uint8_t pin : digitalPins) {
+        Serial.printf("%s\"GPIO%d\":", firstPin ? "" : ",", pin);
+        firstPin = false;
+        if (ioPinsConfigured) Serial.print(digitalRead(pin)); else Serial.print("null");
+    }
+    for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
+        bool listed = false;
+        for (uint8_t pin : digitalPins) if (pin == ADDR_PINS[bit]) listed = true;
+        if (listed) continue;
+        Serial.printf(",\"GPIO%d\":", ADDR_PINS[bit]);
+        if (addressPinsConfigured) Serial.print(digitalRead(ADDR_PINS[bit])); else Serial.print("null");
+    }
+    Serial.printf("},\"adc\":{\"GPIO%d\":", SMOKE_SENSOR_PIN);
+    if (hasSmokeReading) Serial.print(latestRawSmoke); else Serial.print("null");
+    Serial.println("}}");
+
+    int pinId = 0;
+    Serial.print("{\"pin_debug\":\"address\",\"levels\":{");
+    for (int bit = 0; bit < ADDR_PIN_COUNT; bit++) {
+        Serial.printf("%s\"GPIO%d\":", bit ? "," : "", ADDR_PINS[bit]);
+        if (addressPinsConfigured) {
+            const int level = digitalRead(ADDR_PINS[bit]);
+            Serial.print(level);
+            if (level == LOW) pinId |= 1 << bit;
+        } else Serial.print("null");
+    }
+    Serial.print("},\"pin_id\":");
+    if (addressPinsConfigured) Serial.print(pinId); else Serial.print("null");
+    Serial.print(",\"matches_node\":");
+    if (addressPinsConfigured && validId) Serial.print(pinId == localNodeId ? "true" : "false");
+    else Serial.print("null");
+#ifdef FORCE_NODE_ID
+    Serial.println(",\"forced_id\":true}");
+#else
+    Serial.println(",\"forced_id\":false}");
+#endif
+
+    Serial.printf("{\"pin_debug\":\"mq2\",\"gpio\":%d,\"raw_adc\":", SMOKE_SENSOR_PIN);
+    if (hasSmokeReading) Serial.print(latestRawSmoke); else Serial.print("null");
+    Serial.print(",\"used_adc\":");
+    if (self && meshReady) Serial.print(self->smoke); else Serial.print("null");
+    Serial.printf(",\"warming_up\":%s,\"clean\":%d,\"trigger\":%d}\n",
+                  warmingUp ? "true" : "false", SMOKE_CLEAN, SMOKE_THRESHOLD);
+
+    Serial.printf("{\"pin_debug\":\"dht22\",\"gpio\":%d,\"level\":", DHT_PIN);
+    if (ioPinsConfigured) Serial.print(digitalRead(DHT_PIN)); else Serial.print("null");
+    Serial.printf(",\"status\":\"%s\",\"temp_c\":",
+                  !ioPinsConfigured ? "NOT_INITIALIZED" : !lastDhtRead ? "NOT_READ" : dht.getStatusString());
+    if (self && lastDhtRead && self->temp != TEMP_UNKNOWN) Serial.printf("%.1f", self->temp / 10.0f);
+    else Serial.print("null");
+    Serial.print(",\"humidity_pct\":");
+    if (self && lastDhtRead && self->humidity != HUMIDITY_UNKNOWN) Serial.print((int)self->humidity);
+    else Serial.print("null");
+    Serial.print(",\"age_ms\":");
+    if (lastDhtRead) Serial.print(now - lastDhtRead); else Serial.print("null");
+    Serial.printf(",\"failures\":%u}\n", dhtFailures);
+
+    const unsigned long manualAge = now - manualStarted;
+    const unsigned long manualRemaining = manualEnabled && manualAge < MANUAL_DURATION_MS ?
+                                          MANUAL_DURATION_MS - manualAge : 0;
+    Serial.printf("{\"pin_debug\":\"sprinkler\",\"gpio\":%d,\"enabled\":%s,\"level\":",
+                  SPRINKLER_LED_PIN, role == NODE_ROLE_SPRINKLER && meshReady ? "true" : "false");
+    if (ioPinsConfigured) Serial.print(digitalRead(SPRINKLER_LED_PIN)); else Serial.print("null");
+    Serial.printf(",\"command\":%d,\"automatic\":%s,\"manual\":%s,\"manual_remaining_ms\":%lu}\n",
+                  (flags & 1) ? 1 : 0, (flags & 2) ? "true" : "false",
+                  (flags & 4) ? "true" : "false", manualRemaining);
+
+    int dir = -1;
+    if (validId && cachedNextHop >= 0 && cachedNextHop < NUM_NODES)
+        dir = ARROW_DIRS[localNodeId][cachedNextHop];
+    int litPixels = 0;
+    if (matrixInitialized)
+        for (int i = 0; i < NUM_LEDS; i++)
+            if (leds[i].r || leds[i].g || leds[i].b) litPixels++;
+    const char *matrixMode = !matrixInitialized ? "disabled" : !meshReady ? "standby" :
+                             cachedNextHop == NEXT_HOP_TRAPPED || dir < 0 ? "trapped" : "arrow";
+    Serial.printf("{\"pin_debug\":\"matrix\",\"gpio\":%d,\"enabled\":%s,\"idle_level\":",
+                  LED_PIN, matrixInitialized ? "true" : "false");
+    if (ioPinsConfigured) Serial.print(digitalRead(LED_PIN)); else Serial.print("null");
+    Serial.printf(",\"mode\":\"%s\",\"direction\":%d,\"buffer_lit_pixels\":%d,"
+                  "\"led_count\":%d,\"brightness\":%d}\n",
+                  matrixMode, dir, litPixels, NUM_LEDS, MATRIX_BRIGHTNESS);
+}
+
 // Unweighted shortest corridor distances: danger blocks evacuation, but must
 // never block propagation of a sprinkler trigger. Exits are terminal doors.
 bool nearbyDanger() {
@@ -670,9 +811,14 @@ void setup() {
     digitalWrite(SPRINKLER_LED_PIN, LOW);
     systemBootTime = millis();
     pinMode(SMOKE_SENSOR_PIN, INPUT);
+    // Keep input buffers readable even when no peripheral is attached or this
+    // node does not use a matrix. FastLED configures its output on arrow nodes.
+    pinMode(DHT_PIN, INPUT);
+    pinMode(LED_PIN, INPUT);
 
 
     dht.setup(DHT_PIN, DHTesp::DHT22);
+    ioPinsConfigured = true;
 
     if (!WiFi.mode(WIFI_STA)) {
         startupError = "WiFi station init failed";
@@ -688,7 +834,8 @@ void setup() {
 
     if (NODE_ROLES[localNodeId] == NODE_ROLE_ARROW) {
         FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-        FastLED.setBrightness(10);
+        FastLED.setBrightness(MATRIX_BRIGHTNESS);
+        matrixInitialized = true;
     }
     char macText[18];
     formatMac(localMac, macText, sizeof(macText));
@@ -760,6 +907,8 @@ void runNode() {
     drainControls();
 
     uint16_t rawSmoke = readSensorSmoke();
+    latestRawSmoke = rawSmoke;
+    hasSmokeReading = true;
     uint16_t validatedSmoke = 0;
     if (millis() - systemBootTime > SENSOR_WARMUP_MS) {
         validatedSmoke = rawSmoke;
@@ -799,17 +948,6 @@ void runNode() {
         cachedNextHop = solveNextHop(localNodeId);
         meshTable[localNodeId].nextHop = (int8_t)cachedNextHop;
     }
-
-#ifndef BENCH_LIVE_MASK
-    // 每秒印自己的讀值與燈號等級，校正 MQ-2 底線用（0 綠 / 1 琥珀 / 2 紅）
-    static uint32_t lastSelfLog = 0;
-    if (millis() - lastSelfLog > 1000) {
-        lastSelfLog = millis();
-        Serial.printf("{\"self\":%d,\"raw_smoke\":%u,\"temp\":%d,\"urgency\":%d,\"next\":%d}\n",
-                      localNodeId, rawSmoke, meshTable[localNodeId].temp,
-                      (int)localUrgency(), cachedNextHop);
-    }
-#endif
 
 #ifdef BENCH_LIVE_MASK
     // 桌上測試用：每秒印自己的讀值、下一跳、以及收到的其他實體板子的讀值與成本倍率
@@ -869,6 +1007,10 @@ void loop() {
     } else {
         runNode();
     }
+
+    // Log after updateSprinkler()/FastLED.show() so the output and flags belong
+    // to this loop iteration, including standby and bad-address diagnostics.
+    logPinDebug();
 
     // The loop task never blocks on its own: delayMicroseconds() busy-waits and
     // FastLED does not yield. Without this the idle task never gets scheduled

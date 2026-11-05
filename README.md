@@ -90,6 +90,56 @@ pio run -t upload
 
 If multiple serial devices are connected, configure the correct `upload_port` in the PlatformIO project settings. All sensor nodes use the same firmware binary and identify themselves from the address pins listed in `topology.h`; check each board's jumpers against the site topology before deployment.
 
+### 用 Serial Monitor 查看節點腳位
+
+在專案根目錄編譯、燒錄 node，然後開啟 115200 baud 的 monitor：
+
+```bash
+pio run -d firmware/node -e esp32dev
+pio run -d firmware/node -e esp32dev -t upload --upload-port /dev/ttyUSB0
+pio device monitor -d firmware/node --port /dev/ttyUSB0 --baud 115200
+```
+
+Windows 請把 `/dev/ttyUSB0` 換成實際的 `COM` 埠。按 Ctrl+C 離開 monitor；
+燒錄前先關閉占用同一序列埠的 monitor 或後端。
+
+每秒輸出一組七行 JSON，每行維持緊湊格式，組與組之間只留一個空行。
+正式版、bench 版都會輸出；位址錯誤或初始化失敗時也會列出可讀取的腳位。
+
+| `pin_debug` | 腳位 | 重點欄位 |
+| --- | --- | --- |
+| `node` | — | `self`：開機採用的編號；`role`：角色；`state`：執行狀態；`urgency`：0 正常、1 警戒、2 危險；`live_nodes` 包含自己 |
+| `gpio` | 全部 8 個使用中的 GPIO | `levels`：GPIO13、14、27、32、33、25、26 的實際數位電位，0 低、1 高；`adc.GPIO34`：MQ2 原始平均 ADC；不依角色或外設是否回應省略腳位 |
+| `address` | GPIO32、33、25、26 | `levels` 是實際電位：**0 接地、1 高電位**；`pin_id` 是當下跳線組成的編號；`matches_node` 可發現開機後的跳線變動；`forced_id` 表示使用編譯時指定編號 |
+| `mq2` | GPIO34 | `raw_adc`：原始平均值；`used_adc`：控制／廣播採用值；`warming_up`：前 5 秒暖機；`clean`、`trigger`：實際編入的警戒與危險門檻 |
+| `dht22` | GPIO27，或 `DHT_PIN` 指定值 | `level`：資料線當下電位；`temp_c`、`humidity_pct`：最近一次量測；`status`：OK、TIMEOUT、CHECKSUM 等；`age_ms`：距離上次讀取的時間 |
+| `sprinkler` | GPIO14 | `level`：腳位讀回電位；`command`：程式控制值，1 亮、0 滅；`automatic`、`manual`：觸發來源；`manual_remaining_ms`：手動模式剩餘時間 |
+| `matrix` | GPIO13 | `enabled`：是否初始化燈板；`idle_level`：資料線當下電位；`mode`：arrow、trapped、standby、disabled；`direction`：0 東、1 東北、2 北、3 西北、4 西、5 西南、6 南、7 東南，-1 無箭頭 |
+
+例如全部使用腳位的原始讀值，即使 DHT22、撒水 LED 沒接，也會列出 GPIO27、14：
+
+```json
+{"pin_debug":"gpio","levels":{"GPIO13":0,"GPIO14":1,"GPIO27":1,"GPIO32":0,"GPIO33":0,"GPIO25":1,"GPIO26":1},"adc":{"GPIO34":350}}
+```
+
+撒水 LED 的功能狀態另外一行：
+
+```json
+{"pin_debug":"sprinkler","gpio":14,"enabled":true,"level":1,"command":1,"automatic":true,"manual":false,"manual_remaining_ms":0}
+```
+
+`null` 表示未初始化、未讀取或感測失敗，避免與真正的 0 混淆。DHT 使用既有
+2.2 秒讀取週期，除錯輸出不會額外觸發量測。燈板 `buffer_lit_pixels` 是程式
+畫面緩衝區中的亮點數；WS2812 資料線閒置電位與緩衝區都不能證明實體燈已亮。
+3.3V、5V、GND 是電源接腳，這份韌體不量測其電壓。
+沒有外設的輸入腳可能浮動；單次 0／1 無法判定是否接線。`enabled` 是韌體功能
+是否啟用，不代表偵測到已接上外設。DHT22 沒回應時，GPIO27 的電位仍會列出，
+溫濕度顯示 `null`、狀態顯示 `TIMEOUT`。GPIO14 即使沒接 LED 也能讀回電位。
+
+輸出間隔由 `firmware/node/src/main.cpp` 的 `PIN_DEBUG_INTERVAL_MS` 控制，預設 1000 ms。
+MQ2 危險門檻由同一檔案的 `SMOKE_THRESHOLD` 控制；設定為 0 時，任何非負讀值
+都符合煙霧危險條件。門檻改動需要重新編譯、燒錄才生效。
+
 ## Change the Site Topology
 
 Edit the node coordinates and corridor definitions in `tools/place.py`, then run this command from the repository root:

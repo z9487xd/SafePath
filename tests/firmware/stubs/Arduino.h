@@ -24,18 +24,23 @@
 static unsigned long testClock = 10000;
 static int pinWrites[40] = {};
 static int pinModes[40] = {};
+static int inputLevels[40] = {};
+static uint64_t externallyDrivenPins = 0;
 static unsigned address = 1;
 static int smokeInput = 0;
+static int analogReadCalls = 0;
 inline unsigned long millis() { return testClock; }
 inline void delay(unsigned long ms) { testClock += ms; }
 inline void delayMicroseconds(unsigned) {}
 inline void pinMode(int pin, int mode) { pinModes[pin] = mode; }
 inline void digitalWrite(int pin, int value) { pinWrites[pin] = value; }
-inline int analogRead(int) { return smokeInput; }
+inline int analogRead(int) { ++analogReadCalls; return smokeInput; }
 inline int digitalRead(int pin) {
+    if (externallyDrivenPins & (1ULL << pin)) return inputLevels[pin];
     const int pins[] = {32, 33, 25, 26};
     for (int bit = 0; bit < 4; ++bit)
         if (pin == pins[bit]) return (address & (1U << bit)) ? LOW : HIGH;
+    if (pinModes[pin] == OUTPUT) return pinWrites[pin];
     return HIGH;
 }
 struct TestSerial {

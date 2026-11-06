@@ -1,0 +1,535 @@
+{
+ "dataset_name": "職業災害統計網路填報系統媒介物分類表",
+ "dataset_id": "41470",
+ "publisher": "勞動部職業安全衛生署",
+ "source_url": "",
+ "source_files": [
+  "https://apiservice.mol.gov.tw/OdService/download/A17000000J-030007-syk"
+ ],
+ "retrieved_at": "2026-11-02T00:43:41+00:00",
+ "note": "由 tools/build_report_codes.py 產生",
+ "records": [
+  {
+   "code": "111",
+   "group": "動力機械",
+   "subgroup": "原動機",
+   "name": "原動機"
+  },
+  {
+   "code": "121",
+   "group": "動力機械",
+   "subgroup": "動力傳導裝置",
+   "name": "傳動軸"
+  },
+  {
+   "code": "122",
+   "group": "動力機械",
+   "subgroup": "動力傳導裝置",
+   "name": "傳動輪"
+  },
+  {
+   "code": "123",
+   "group": "動力機械",
+   "subgroup": "動力傳導裝置",
+   "name": "齒輪"
+  },
+  {
+   "code": "129",
+   "group": "動力機械",
+   "subgroup": "動力傳導裝置",
+   "name": "其他"
+  },
+  {
+   "code": "131",
+   "group": "動力機械",
+   "subgroup": "木材加工用機械",
+   "name": "圓鋸"
+  },
+  {
+   "code": "132",
+   "group": "動力機械",
+   "subgroup": "木材加工用機械",
+   "name": "帶鋸"
+  },
+  {
+   "code": "133",
+   "group": "動力機械",
+   "subgroup": "木材加工用機械",
+   "name": "鉋面鋸"
+  },
+  {
+   "code": "139",
+   "group": "動力機械",
+   "subgroup": "木材加工用機械",
+   "name": "其他"
+  },
+  {
+   "code": "141",
+   "group": "動力機械",
+   "subgroup": "營造用機械",
+   "name": "牽引機類設備"
+  },
+  {
+   "code": "142",
+   "group": "動力機械",
+   "subgroup": "營造用機械",
+   "name": "動力鏟類設備"
+  },
+  {
+   "code": "143",
+   "group": "動力機械",
+   "subgroup": "營造用機械",
+   "name": "打樁機、拔樁機"
+  },
+  {
+   "code": "149",
+   "group": "動力機械",
+   "subgroup": "營造用機械",
+   "name": "其他"
+  },
+  {
+   "code": "151",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "車床"
+  },
+  {
+   "code": "152",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "鑽床"
+  },
+  {
+   "code": "153",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "研磨床"
+  },
+  {
+   "code": "154",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "沖床、剪床"
+  },
+  {
+   "code": "155",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "鍛壓鎚"
+  },
+  {
+   "code": "156",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "離心機"
+  },
+  {
+   "code": "157",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "錕合機、粉碎機"
+  },
+  {
+   "code": "158",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "滾筒"
+  },
+  {
+   "code": "159",
+   "group": "動力機械",
+   "subgroup": "一般動力機械",
+   "name": "其他"
+  },
+  {
+   "code": "211",
+   "group": "裝卸運搬機械",
+   "subgroup": "起重機械",
+   "name": "起重機"
+  },
+  {
+   "code": "212",
+   "group": "裝卸運搬機械",
+   "subgroup": "起重機械",
+   "name": "移動式起重機"
+  },
+  {
+   "code": "213",
+   "group": "裝卸運搬機械",
+   "subgroup": "起重機械",
+   "name": "人字臂起重機"
+  },
+  {
+   "code": "214",
+   "group": "裝卸運搬機械",
+   "subgroup": "起重機械",
+   "name": "升降機、提升機"
+  },
+  {
+   "code": "215",
+   "group": "裝卸運搬機械",
+   "subgroup": "起重機械",
+   "name": "船舶裝卸裝置"
+  },
+  {
+   "code": "216",
+   "group": "裝卸運搬機械",
+   "subgroup": "起重機械",
+   "name": "吊籠"
+  },
+  {
+   "code": "217",
+   "group": "裝卸運搬機械",
+   "subgroup": "起重機械",
+   "name": "機械運材、索道機械、集材裝置"
+  },
+  {
+   "code": "219",
+   "group": "裝卸運搬機械",
+   "subgroup": "起重機械",
+   "name": "其他"
+  },
+  {
+   "code": "221",
+   "group": "裝卸運搬機械",
+   "subgroup": "動力搬機械",
+   "name": "卡車"
+  },
+  {
+   "code": "222",
+   "group": "裝卸運搬機械",
+   "subgroup": "動力搬機械",
+   "name": "堆高機"
+  },
+  {
+   "code": "223",
+   "group": "裝卸運搬機械",
+   "subgroup": "動力搬機械",
+   "name": "事業內、軌道 設備"
+  },
+  {
+   "code": "224",
+   "group": "裝卸運搬機械",
+   "subgroup": "動力搬機械",
+   "name": "輸送帶"
+  },
+  {
+   "code": "229",
+   "group": "裝卸運搬機械",
+   "subgroup": "動力搬機械",
+   "name": "其他"
+  },
+  {
+   "code": "231",
+   "group": "裝卸運搬機械",
+   "subgroup": "交通工具",
+   "name": "汽車、公共汽車"
+  },
+  {
+   "code": "232",
+   "group": "裝卸運搬機械",
+   "subgroup": "交通工具",
+   "name": "火車"
+  },
+  {
+   "code": "239",
+   "group": "裝卸運搬機械",
+   "subgroup": "交通工具",
+   "name": "其他"
+  },
+  {
+   "code": "311",
+   "group": "其他設備",
+   "subgroup": "壓力容器類",
+   "name": "鍋爐"
+  },
+  {
+   "code": "312",
+   "group": "其他設備",
+   "subgroup": "壓力容器類",
+   "name": "壓力容器"
+  },
+  {
+   "code": "319",
+   "group": "其他設備",
+   "subgroup": "壓力容器類",
+   "name": "其他"
+  },
+  {
+   "code": "321",
+   "group": "其他設備",
+   "subgroup": "化學設備",
+   "name": "化學設備"
+  },
+  {
+   "code": "331",
+   "group": "其他設備",
+   "subgroup": "熔接設備",
+   "name": "氣體熔接"
+  },
+  {
+   "code": "332",
+   "group": "其他設備",
+   "subgroup": "熔接設備",
+   "name": "電弧熔接"
+  },
+  {
+   "code": "339",
+   "group": "其他設備",
+   "subgroup": "熔接設備",
+   "name": "其他"
+  },
+  {
+   "code": "341",
+   "group": "其他設備",
+   "subgroup": "爐窯等",
+   "name": "爐窯等"
+  },
+  {
+   "code": "351",
+   "group": "其他設備",
+   "subgroup": "電氣設備",
+   "name": "輸配電線路"
+  },
+  {
+   "code": "352",
+   "group": "其他設備",
+   "subgroup": "電氣設備",
+   "name": "電力設備"
+  },
+  {
+   "code": "359",
+   "group": "其他設備",
+   "subgroup": "電氣設備",
+   "name": "其他"
+  },
+  {
+   "code": "361",
+   "group": "其他設備",
+   "subgroup": "人力機械工具",
+   "name": "人力起重機"
+  },
+  {
+   "code": "362",
+   "group": "其他設備",
+   "subgroup": "人力機械工具",
+   "name": "人力搬運"
+  },
+  {
+   "code": "363",
+   "group": "其他設備",
+   "subgroup": "人力機械工具",
+   "name": "人力機械"
+  },
+  {
+   "code": "364",
+   "group": "其他設備",
+   "subgroup": "人力機械工具",
+   "name": "手工具"
+  },
+  {
+   "code": "371",
+   "group": "其他設備",
+   "subgroup": "用具",
+   "name": "梯子等"
+  },
+  {
+   "code": "372",
+   "group": "其他設備",
+   "subgroup": "用具",
+   "name": "吊掛勾具"
+  },
+  {
+   "code": "379",
+   "group": "其他設備",
+   "subgroup": "用具",
+   "name": "其他"
+  },
+  {
+   "code": "391",
+   "group": "其他設備",
+   "subgroup": "其他設備",
+   "name": "其他設備"
+  },
+  {
+   "code": "411",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "施工架"
+  },
+  {
+   "code": "412",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "支撐架"
+  },
+  {
+   "code": "413",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "樓梯、梯道"
+  },
+  {
+   "code": "414",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "開口部份"
+  },
+  {
+   "code": "415",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "屋頂、屋架、樑"
+  },
+  {
+   "code": "416",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "工作台、踏板"
+  },
+  {
+   "code": "417",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "通路"
+  },
+  {
+   "code": "418",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "營建物"
+  },
+  {
+   "code": "419",
+   "group": "營建物及施工設備",
+   "subgroup": "營建物及施工設備",
+   "name": "其他"
+  },
+  {
+   "code": "511",
+   "group": "物質材料",
+   "subgroup": "危險物、有害物",
+   "name": "爆炸性物質"
+  },
+  {
+   "code": "512",
+   "group": "物質材料",
+   "subgroup": "危險物、有害物",
+   "name": "引火性物質"
+  },
+  {
+   "code": "513",
+   "group": "物質材料",
+   "subgroup": "危險物、有害物",
+   "name": "可燃性氣體"
+  },
+  {
+   "code": "514",
+   "group": "物質材料",
+   "subgroup": "危險物、有害物",
+   "name": "有害物"
+  },
+  {
+   "code": "515",
+   "group": "物質材料",
+   "subgroup": "危險物、有害物",
+   "name": "輻射線"
+  },
+  {
+   "code": "519",
+   "group": "物質材料",
+   "subgroup": "危險物、有害物",
+   "name": "其他"
+  },
+  {
+   "code": "521",
+   "group": "物質材料",
+   "subgroup": "材料",
+   "name": "金屬材料"
+  },
+  {
+   "code": "522",
+   "group": "物質材料",
+   "subgroup": "材料",
+   "name": "木材、竹材"
+  },
+  {
+   "code": "523",
+   "group": "物質材料",
+   "subgroup": "材料",
+   "name": "石頭、砂、小石子"
+  },
+  {
+   "code": "529",
+   "group": "物質材料",
+   "subgroup": "材料",
+   "name": "其他"
+  },
+  {
+   "code": "611",
+   "group": "貨物",
+   "subgroup": "運搬物體",
+   "name": "已包裝 貨物"
+  },
+  {
+   "code": "612",
+   "group": "貨物",
+   "subgroup": "運搬物體",
+   "name": "未包裝 機械"
+  },
+  {
+   "code": "711",
+   "group": "環境",
+   "subgroup": "環境",
+   "name": "土砂、岩石"
+  },
+  {
+   "code": "712",
+   "group": "環境",
+   "subgroup": "環境",
+   "name": "立木"
+  },
+  {
+   "code": "713",
+   "group": "環境",
+   "subgroup": "環境",
+   "name": "水"
+  },
+  {
+   "code": "714",
+   "group": "環境",
+   "subgroup": "環境",
+   "name": "特殊環境"
+  },
+  {
+   "code": "715",
+   "group": "環境",
+   "subgroup": "環境",
+   "name": "高低溫環境"
+  },
+  {
+   "code": "719",
+   "group": "環境",
+   "subgroup": "環境",
+   "name": "其他"
+  },
+  {
+   "code": "911",
+   "group": "其他類",
+   "subgroup": "其他媒介物",
+   "name": "其他媒介物"
+  },
+  {
+   "code": "921",
+   "group": "其他類",
+   "subgroup": "無媒介物",
+   "name": "無媒介物"
+  },
+  {
+   "code": "999",
+   "group": "其他類",
+   "subgroup": "不能分類",
+   "name": "不能分類"
+  }
+ ]
+}

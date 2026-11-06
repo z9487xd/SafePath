@@ -1,0 +1,735 @@
+{
+ "dataset_name": "職業傷病診治網絡醫院名單",
+ "dataset_id": "31780",
+ "publisher": "勞動部職業安全衛生署",
+ "category": "診治網絡",
+ "source_url": "",
+ "source_files": [
+  "https://apiservice.mol.gov.tw/OdService/download/A17040000J-000029-zYY"
+ ],
+ "retrieved_at": "2026-10-31T17:03:55+00:00",
+ "note": "由 tools/build_medical_cache.py 產生；已移除聯絡人姓名",
+ "records": [
+  {
+   "name": "臺北市立聯合醫院忠孝院區",
+   "county": "臺北市",
+   "address": "臺北市南港區同德路87號",
+   "phone": "(02)27861288",
+   "url": "https://webreg.tpech.gov.tw/RegOnline1_2.aspx?ZCode=Q&DeptCode=2300&deptname=%e8%81%b7%e6%a5%ad%e9%86%ab%e5%ad%b8%e7%a7%91&sms=F4D5D5AFBE7589AB&s=36DCBB853896F6E6"
+  },
+  {
+   "name": "三軍總醫院附設民眾診療服務處",
+   "county": "臺北市",
+   "address": "臺北市內湖區成功路二段325號(2樓家庭暨社區醫學部職業醫學科)",
+   "phone": "(02)87923311",
+   "url": "https://wwwv.tsgh.ndmctsgh.edu.tw/Docsch/191/102517/29832"
+  },
+  {
+   "name": "長庚醫療財團法人台北長庚紀念醫院",
+   "county": "臺北市",
+   "address": "臺北市松山區敦化北路199號(因工程施工中),暫改至環亞門診部:南京東路三段337號5,6,9,10樓(南京微風百貨同棟大樓)",
+   "phone": "(02)27135211",
+   "url": "https://register.cgmh.org.tw/Department/1/13H00B13750B"
+  },
+  {
+   "name": "基督復臨安息日會醫療財團法人臺安醫院",
+   "county": "臺北市",
+   "address": "臺北市松山區八德路二段424號",
+   "phone": "(02)27718151",
+   "url": "https://www.tahsda.org.tw/Register/add_dr.php?doc=171"
+  },
+  {
+   "name": "台灣基督長老教會馬偕醫療財團法人馬偕紀念醫院",
+   "county": "臺北市",
+   "address": "臺北市中山區中山北路二段92號",
+   "phone": "(02)25433535",
+   "url": "https://www.mmh.org.tw/departmain.php?id=10"
+  },
+  {
+   "name": "新光醫療財團法人新光吳火獅紀念醫院",
+   "county": "臺北市",
+   "address": "臺北市士林區文昌路95號",
+   "phone": "(02)28332211",
+   "url": "https://www.skh.org.tw/skh_regis/#/register/step"
+  },
+  {
+   "name": "振興醫療財團法人振興醫院",
+   "county": "臺北市",
+   "address": "臺北市北投區振興街45號",
+   "phone": "(02)28264400",
+   "url": "https://reg.chgh.org.tw/registc_cload.aspx"
+  },
+  {
+   "name": "臺北產業醫診所",
+   "county": "臺北市",
+   "address": "臺北市信義區信義路五段7號35樓",
+   "phone": "(02)81016355",
+   "url": "https://m.facebook.com/taipei101clinic/"
+  },
+  {
+   "name": "臺北醫學大學附設醫院",
+   "county": "臺北市",
+   "address": "臺北市信義區吳興街252號",
+   "phone": "(02)27372181",
+   "url": "https://www.tmuh.org.tw/service/timetable/23"
+  },
+  {
+   "name": "臺北市立萬芳醫院(委託財團法人臺北醫學大學辦理)",
+   "county": "臺北市",
+   "address": "臺北市文山區興隆路三段111號",
+   "phone": "(02)29307930",
+   "url": "https://www.wanfang.gov.tw/p3_register_e3.aspx?depttype=B&deptcode=5800&doccode=61493"
+  },
+  {
+   "name": "山林診所",
+   "county": "臺北市",
+   "address": "臺北市文山區羅斯福路六段407號2樓",
+   "phone": "(02)29332010",
+   "url": "https://www.facebook.com/ShanLinHC/?locale=zh_TW"
+  },
+  {
+   "name": "醫療財團法人徐元智先生醫藥基金會亞東紀念醫院",
+   "county": "新北市",
+   "address": "新北市板橋區南雅南路二段21號",
+   "phone": "(02)89667000",
+   "url": "https://www.femh.org.tw/webregs/RegSec1?ID=0295"
+  },
+  {
+   "name": "衛生福利部臺北醫院",
+   "county": "新北市",
+   "address": "新北市新莊區思源路127號",
+   "phone": "(02)22765566",
+   "url": "https://nreg.tph.mohw.gov.tw/OReg/OpoDoctorsVisitListPage?sectcategory=%E5%85%A7%E7%A7%91%E7%B3%BB&sectid=0106&sectname=%E8%81%B7%E6%A5%AD%E9%86%AB%E5%AD%B8%E7%A7%91&showcd=N"
+  },
+  {
+   "name": "輔仁大學學校財團法人輔仁大學附設醫院",
+   "county": "新北市",
+   "address": "新北市泰山區貴子路69號",
+   "phone": "(02)85128888",
+   "url": "https://www.hospital.fju.edu.tw/DoctorCond?STAMPID=00710#gsc.tab=0"
+  },
+  {
+   "name": "新北市立土城醫院(委託長庚醫療財團法人興建經營)",
+   "county": "新北市",
+   "address": "新北市土城區金城路2段6號",
+   "phone": "(02)22630588",
+   "url": "https://register.cgmh.org.tw/Department/V/V3H40A"
+  },
+  {
+   "name": "佛教慈濟醫療財團法人台北慈濟醫院",
+   "county": "新北市",
+   "address": "新北市新店區建國路289號",
+   "phone": "(02)66289779",
+   "url": "https://reg-prod.tzuchi-healthcare.org.tw/tchw/HIS5OpdReg/OpdTimeShow?Pass=XD;65"
+  },
+  {
+   "name": "天主教耕莘醫療財團法人耕莘醫院",
+   "county": "新北市",
+   "address": "新北市新店區中正路362號",
+   "phone": "(02)22193391",
+   "url": "https://webreg.cth.org.tw/CthWebReg/WebReg/doctor_clinic.aspx?from=doctor&district=A&order=doctor&kid=1745&drid=150124&drname=%E5%AD%AB%E6%83%A0%E9%88%BA"
+  },
+  {
+   "name": "衛生福利部雙和醫院(委託臺北醫學大學興建經營)",
+   "county": "新北市",
+   "address": "新北市中和區中正路291號",
+   "phone": "(03)3699721",
+   "url": "https://shh.tmu.edu.tw/page/ShhregTable.aspx?deptCode=23"
+  },
+  {
+   "name": "台灣基督長老教會馬偕醫療財團法人淡水馬偕紀念醫院",
+   "county": "新北市",
+   "address": "新北市淡水區民生路45號",
+   "phone": "(02)28094661",
+   "url": "https://www.mmh.org.tw/register_divide.php?depid=233"
+  },
+  {
+   "name": "天主教靈醫會醫療財團法人羅東聖母醫院",
+   "county": "宜蘭縣",
+   "address": "宜蘭縣羅東鎮中正南路160號",
+   "phone": "(03)9544106",
+   "url": "https://gcreg.smh.org.tw/register/Department/A/A1D10B"
+  },
+  {
+   "name": "國立陽明交通大學附設醫院",
+   "county": "宜蘭縣",
+   "address": "宜蘭縣宜蘭市校舍路169號",
+   "phone": "(03)9325192",
+   "url": "https://www.hosp.nycu.edu.tw/departments/health-care/fmd/profession/member.html"
+  },
+  {
+   "name": "臺北榮民總醫院蘇澳分院",
+   "county": "宜蘭縣",
+   "address": "宜蘭縣蘇澳鎮蘇濱路一段301號",
+   "phone": "(03)9905106",
+   "url": "https://www.ysvh.gov.tw/savh/index.php?module=CurerInfo&action=user_detail&sn=88"
+  },
+  {
+   "name": "衛生福利部金門醫院",
+   "county": "金門縣",
+   "address": "金門縣金湖鎮復興路2號",
+   "phone": "(08)2332546",
+   "url": "https://netreg.kmhp.mohw.gov.tw/OINetReg/OINetReg.Reg/Reg_RegTable.aspx?HID=F&Way=Dept&DivDr=100F&Date=&Noon="
+  },
+  {
+   "name": "連江縣立醫院",
+   "county": "連江縣",
+   "address": "連江縣南竿鄉復興村217號",
+   "phone": "(08)3625114",
+   "url": "https://www.matsuh.gov.tw/news/content/43CD1A5B2D09982BE159FDE3D7ECEF70"
+  },
+  {
+   "name": "臺北榮民總醫院桃園分院",
+   "county": "桃園市",
+   "address": "桃園市桃園區成功路三段100號",
+   "phone": "(03)2868001",
+   "url": "http://webreg.tyvh.gov.tw/register/"
+  },
+  {
+   "name": "沙爾德聖保祿修女會醫療財團法人聖保祿醫院",
+   "county": "桃園市",
+   "address": "桃園市桃園區區建新街123號",
+   "phone": "(03)3613141",
+   "url": "https://rms.sph.org.tw/RMSTimeTable.aspx?dpt=S1100D"
+  },
+  {
+   "name": "敏盛綜合醫院",
+   "county": "桃園市",
+   "address": "桃園市桃園區經國路168號",
+   "phone": "(03)3179599",
+   "url": "https://www.e-ms.com.tw/SubWeb/MedicalTeam/index.html"
+  },
+  {
+   "name": "聖昌診所",
+   "county": "桃園市",
+   "address": "桃園市桃園區大業路一段318號",
+   "phone": "(03)3150732",
+   "url": "https://netreg.realsun.com.tw/web/3532015529"
+  },
+  {
+   "name": "日康診所",
+   "county": "桃園市",
+   "address": "桃園市蘆竹區桃園街82號1樓",
+   "phone": "(03)2129797",
+   "url": "https://wroom.vision.com.tw/MainPage/ClinicInfo.aspx?CliID=VFklZB16OBVJ%2F5DH9gvp3Q==#WInfos"
+  },
+  {
+   "name": "聯新國際醫院",
+   "county": "桃園市",
+   "address": "桃園市平鎮區廣泰路77號",
+   "phone": "(03)4941234",
+   "url": "https://www.landseedhospital.com.tw/tw/appointment"
+  },
+  {
+   "name": "聯心診所",
+   "county": "桃園市",
+   "address": "桃園市中壢區民族路五段310號",
+   "phone": "(03)4205017",
+   "url": "https://www.len.com.tw/modules/cadch/doctor-sin"
+  },
+  {
+   "name": "天成醫療社團法人天晟醫院",
+   "county": "桃園市",
+   "address": "桃園市中壢區延平路155號",
+   "phone": "(03)4629292",
+   "url": "https://www.tcmg.com.tw/register/register_1_detail.php?deptID=20&deptName="
+  },
+  {
+   "name": "國軍桃園總醫院附設民眾診療服務處",
+   "county": "桃園市",
+   "address": "桃園市龍潭區中興路168號",
+   "phone": "(03)4799595",
+   "url": "https://registration.aftygh.gov.tw/webreg/calendar_type/tIylk4AfWAiJTRpCBD1K_Q%3D%3D"
+  },
+  {
+   "name": "衛生福利部桃園醫院新屋分院",
+   "county": "桃園市",
+   "address": "桃園市新屋區新福二路6號",
+   "phone": "(03)4971989",
+   "url": "https://sw.tygh.mohw.gov.tw/"
+  },
+  {
+   "name": "台灣基督長老教會馬偕醫療財團法人新竹馬偕紀念醫院",
+   "county": "新竹市",
+   "address": "新竹市東區光復路二段690號",
+   "phone": "(03)6889595",
+   "url": "https://www.hc.mmh.org.tw/register_divide.php?depid=49"
+  },
+  {
+   "name": "新竹科學工業園區員工診所",
+   "county": "新竹市",
+   "address": "新竹市東區科學里工業東二路2號",
+   "phone": "(03)6669996",
+   "url": "http://www.sharehope-ms.com.tw/page_4_3.html"
+  },
+  {
+   "name": "中國醫藥大學新竹附設醫院",
+   "county": "新竹縣",
+   "address": "新竹縣竹北市興隆路一段199號",
+   "phone": "(03)5580558",
+   "url": "https://www.cmu-hch.cmu.edu.tw/OnlineAppointment/DoctorInfo?flag=second&DocNo=150200&Docname=%E6%96%BD%E8%92%A8%E8%92%A8"
+  },
+  {
+   "name": "天主教仁慈醫療財團法人仁慈醫院",
+   "county": "新竹縣",
+   "address": "新竹縣湖口鄉忠孝路29號",
+   "phone": "(03)5993500",
+   "url": "https://www.mercy1.org.tw/NetReg2/KReg/DoctorList.aspx?DivNo=1800"
+  },
+  {
+   "name": "為恭醫療財團法人為恭紀念醫院",
+   "county": "苗栗縣",
+   "address": "苗栗縣頭份市信義路128號",
+   "phone": "(037)676811",
+   "url": "https://www.cmuh.cmu.edu.tw/BrandHome/PageDetail/1313"
+  },
+  {
+   "name": "衛生福利部苗栗醫院",
+   "county": "苗栗縣",
+   "address": "苗栗縣苗栗市為公路747號",
+   "phone": "(037)261920",
+   "url": "https://reg3.mil.mohw.gov.tw/DOCTORLIST?role=DIV&key_code=0403"
+  },
+  {
+   "name": "大千綜合醫院",
+   "county": "苗栗縣",
+   "address": "苗栗縣苗栗市恭敬路36號",
+   "phone": "(037)357125",
+   "url": "http://60.249.72.244/reg/WebRegISAPI.dll/W3NbOhx3buk-ySmSk2YNgW/$/"
+  },
+  {
+   "name": "衛生福利部臺中醫院",
+   "county": "臺中市",
+   "address": "臺中市中區三民路一段199號",
+   "phone": "(04)22294411",
+   "url": "http://www03.taic.mohw.gov.tw/OINetReg/OINetReg.Reg/Reg_RegTable.aspx?HID=F&Way=Dept&DivDr=0103&Date=&Noon="
+  },
+  {
+   "name": "中國醫藥大學附設醫院台中東區分院",
+   "county": "臺中市",
+   "address": "臺中市東區自由路三段296號",
+   "phone": "(04)22121058",
+   "url": "https://appointment.cmuh.org.tw/cgi-bin/fh1/reg51.cgi?DocNo=D11824&&Docname=%E9%84%AD%E5%85%89%E7%9A%93"
+  },
+  {
+   "name": "國軍臺中總醫院中清分院附設民眾診療服務處",
+   "county": "臺中市",
+   "address": "臺中市北區忠明路500號",
+   "phone": "(04)22033178",
+   "url": "https://web-reg-server.803.org.tw/816/webreg/calendar_dr/ATPH3zzR3FRZon_yYZY5fA%3D%3D"
+  },
+  {
+   "name": "澄清綜合醫院中港分院",
+   "county": "臺中市",
+   "address": "臺中市西屯區臺灣大道四段966號",
+   "phone": "(04)24632000",
+   "url": "https://ck.ccgh.com.tw/register_doctor_detail.htm?pkId=109&RegNo=5637&DoctorName=%E7%8E%8B%E4%BF%8A%E5%A0%AF"
+  },
+  {
+   "name": "禾安診所",
+   "county": "臺中市",
+   "address": "臺中市豐原區永康路312號",
+   "phone": "(04)25231588",
+   "url": "https://meilin4.webnode.tw/"
+  },
+  {
+   "name": "惠盛醫院",
+   "county": "臺中市",
+   "address": "臺中市豐原區中正路268號",
+   "phone": "(04)25222538",
+   "url": "https://www.cmuh.cmu.edu.tw/BrandHome/PageDetail/165"
+  },
+  {
+   "name": "中部科學工業園區員工診所",
+   "county": "臺中市",
+   "address": "臺中市大雅區中科路6-6號",
+   "phone": "(04)25606712",
+   "url": "https://www.cmuh.cmu.edu.tw/BrandHome?brandId=5"
+  },
+  {
+   "name": "仁愛醫療財團法人大里仁愛醫院",
+   "county": "臺中市",
+   "address": "臺中市大里區東榮路483號",
+   "phone": "(04)24819900",
+   "url": "https://www.jah.org.tw/JCHReg/Department/J/J2100A"
+  },
+  {
+   "name": "光田醫療社團法人光田綜合醫院",
+   "county": "臺中市",
+   "address": "臺中市沙鹿區沙田路117號",
+   "phone": "(04)26625111",
+   "url": "https://www.ktgh.com.tw/Reg_Schedule_Step.asp?CatID=29&ModuleType=Y&Area=1&Vsdte=1120306&Vsapn=1&VsClin=216&SDPT="
+  },
+  {
+   "name": "國軍臺中總醫院附設民眾診療服務處",
+   "county": "臺中市",
+   "address": "臺中市太平區中山路2段348號",
+   "phone": "(04)23934191",
+   "url": "https://web-reg-server.803.org.tw/803/webreg/calendar_dr/UmnnwGyzIXSWEl35siGMhg%3D%3D"
+  },
+  {
+   "name": "禾康診所",
+   "county": "臺中市",
+   "address": "臺中市和平區南勢里東關路三段155號1樓",
+   "phone": "(04)25941243",
+   "url": "https://kb.commonhealth.com.tw/hospitals/13419.html"
+  },
+  {
+   "name": "東勢區農會附設農民醫院",
+   "county": "臺中市",
+   "address": "臺中市東勢區豐勢路297號",
+   "phone": "(04)25771919",
+   "url": "http://www.fh.org.tw/index.php?option=com_content&view=article&id=375&Itemid=95"
+  },
+  {
+   "name": "衛生福利部彰化醫院",
+   "county": "彰化縣",
+   "address": "彰化縣埔心鄉中正路二段80號",
+   "phone": "(04)8298686",
+   "url": "https://reg.chhw.mohw.gov.tw/OINetReg/OINetReg.Reg/Reg_RegTable.aspx?HID=C&Way=Dept&DivDr=01&Date=&Noon="
+  },
+  {
+   "name": "員林郭醫院大村分院",
+   "county": "彰化縣",
+   "address": "彰化縣大村鄉田洋橫巷2–9號",
+   "phone": "(04)8539666",
+   "url": "http://www.kuohospital.com.tw/newsview/about3.aspx"
+  },
+  {
+   "name": "秀傳醫療社團法人秀傳紀念醫院",
+   "county": "彰化縣",
+   "address": "彰化縣彰化市中山路一段542號",
+   "phone": "(04)7256166",
+   "url": "https://www.scmh.org.tw/RegDrCal.aspx?Kind=2&Dept=FM&DrNo=RjEyNQ=="
+  },
+  {
+   "name": "埔基醫療財團法人埔里基督教醫院",
+   "county": "南投縣",
+   "address": "南投縣埔里鎮鐵山路1號",
+   "phone": "(049)2912151",
+   "url": "https://www.pch.org.tw/custom.html"
+  },
+  {
+   "name": "臺中榮民總醫院埔里分院",
+   "county": "南投縣",
+   "address": "南投縣埔里鎮榮光路1號",
+   "phone": "(049)2990833",
+   "url": "https://registry.pulivh.gov.tw/register/"
+  },
+  {
+   "name": "瑞斌診所",
+   "county": "南投縣",
+   "address": "南投縣水里鄉民權路230及232號",
+   "phone": "(049)2778866",
+   "url": "https://www.clinics.com.tw/hospital/3538111468%E7%91%9E%E6%96%8C%E8%A8%BA%E6%89%80"
+  },
+  {
+   "name": "國立成功大學醫學院附設醫院斗六分院",
+   "county": "雲林縣",
+   "address": "雲林縣斗六市莊敬路345號",
+   "phone": "(05)5332121",
+   "url": "https://d6www.hosp.ncku.edu.tw/WebRegisterSite/DocRegTimeUI.aspx?EmployeeCode=052345&EmployeeName=%E9%99%B3%E6%9F%8F%E7%A3%8A"
+  },
+  {
+   "name": "彰化基督教醫療財團法人雲林基督教醫院",
+   "county": "雲林縣",
+   "address": "雲林縣西螺鎮市場南路375號",
+   "phone": "(05)5871111",
+   "url": "https://web2yl.cch.org.tw/TIrg/opd/service-e.aspx?id=0107&Page=11&"
+  },
+  {
+   "name": "台塑關係企業麥寮廠區醫務室",
+   "county": "雲林縣",
+   "address": "雲林縣麥寮鄉臺塑工業園區1號",
+   "phone": "(05)6816638",
+   "url": "https://www.clinics.com.tw/hospital/3439130018%E5%8F%B0%E5%A1%91%E9%97%9C%E4%BF%82%E4%BC%81%E6%A5%AD%E9%BA%A5%E5%AF%AE%E5%BB%A0%E5%8D%80%E9%86%AB%E5%8B%99%E5%AE%A4"
+  },
+  {
+   "name": "佛教慈濟醫療財團法人大林慈濟醫院",
+   "county": "嘉義縣",
+   "address": "嘉義縣大林鎮民生路2號",
+   "phone": "(05)2648000",
+   "url": "https://dalin.tzuchi.com.tw/department/3400"
+  },
+  {
+   "name": "臺中榮民總醫院灣橋分院",
+   "county": "嘉義縣",
+   "address": "嘉義縣竹崎鄉灣橋村石麻園38號",
+   "phone": "(05)2359630",
+   "url": "https://reg.vhwc.gov.tw/"
+  },
+  {
+   "name": "長庚醫療財團法人嘉義長庚紀念醫院",
+   "county": "嘉義縣",
+   "address": "嘉義縣朴子市嘉朴路西段8號",
+   "phone": "(05)3621000",
+   "url": "https://register.cgmh.org.tw/Department/6/63H40A"
+  },
+  {
+   "name": "衛生福利部朴子醫院",
+   "county": "嘉義縣",
+   "address": "嘉義縣朴子市海通路42之50號",
+   "phone": "(05)3790600",
+   "url": "https://netreg.puzih.mohw.gov.tw/OINetReg.WebRwd/"
+  },
+  {
+   "name": "衛生福利部嘉義醫院",
+   "county": "嘉義市",
+   "address": "嘉義市西區北港路312號",
+   "phone": "(05)2319090",
+   "url": "https://chyiwww001.chyi.mohw.gov.tw/OINetReg.WebRwd/Reg/DeptCalendar?DeptId=0181"
+  },
+  {
+   "name": "臺中榮民總醫院嘉義分院",
+   "county": "嘉義市",
+   "address": "嘉義市西區世賢路二段600號",
+   "phone": "(05)2359630",
+   "url": "https://tre.vhcy.gov.tw/register/"
+  },
+  {
+   "name": "王伯智皮膚科診所",
+   "county": "嘉義市",
+   "address": "嘉義市西區林森西路500號",
+   "phone": "(05)2276227",
+   "url": "https://www.dr-wbj.com.tw/index.html"
+  },
+  {
+   "name": "台南市立醫院(委託秀傳醫療社團法人經營)",
+   "county": "嘉義市",
+   "address": "嘉義市東區崇德路670號",
+   "phone": "(06)2609926",
+   "url": "https://www.tmh.org.tw/TMH2016/RegCal.aspx?Dept=HC&Kind=2"
+  },
+  {
+   "name": "戴德森醫療財團法人嘉義基督教醫院",
+   "county": "嘉義市",
+   "address": "嘉義市東區忠孝路539號",
+   "phone": "(05)2765041",
+   "url": "https://www2.cych.org.tw/WebToNewRegister/webDRSchedule.aspx"
+  },
+  {
+   "name": "正信診所",
+   "county": "臺南市",
+   "address": "臺南市北區文賢路327號",
+   "phone": "(06)2638363",
+   "url": "https://www.facebook.com/zhengxin327/?locale=zh_TW"
+  },
+  {
+   "name": "奇美醫療財團法人柳營奇美醫院",
+   "county": "臺南市",
+   "address": "臺南市柳營區太康里201號",
+   "phone": "(06)6226999",
+   "url": "http://www.chimei.org.tw/opdschedule/index.aspx?ihosp=13&lang=CH"
+  },
+  {
+   "name": "奇美醫療財團法人佳里奇美醫院",
+   "county": "臺南市",
+   "address": "臺南市佳里區佳興里佳里興606號",
+   "phone": "(06)7263333",
+   "url": "http://www.chimei.org.tw/opdschedule/index.aspx?ihosp=14&lang=CH"
+  },
+  {
+   "name": "郭綜合醫院",
+   "county": "臺南市",
+   "address": "臺南市中西區民生路二段22號",
+   "phone": "(06)2221111",
+   "url": "http://www.kgh.com.tw/Registered/Internet"
+  },
+  {
+   "name": "臺南市立安南醫院(委託中國醫藥大學興建經營)",
+   "county": "臺南市",
+   "address": "臺南市安南區州南里12鄰長和路二段66號",
+   "phone": "(06)3553111",
+   "url": "http://www.tmanh.org.tw/OnlineAppointment/DymSchedule?table=31403A"
+  },
+  {
+   "name": "國軍左營總醫院岡山分院附設民眾診療服務處",
+   "county": "高雄市",
+   "address": "高雄市岡山區大義二路1號",
+   "phone": "(07)6250919",
+   "url": "https://814.mnd.gov.tw/ListP01006.ShowItemListState.do"
+  },
+  {
+   "name": "高雄市立大同醫院",
+   "county": "高雄市",
+   "address": "高雄市前金區中華三路68號",
+   "phone": "(07)7317123",
+   "url": "https://register.mtth.org.tw/Department_WEEK/W/W3H40AW3H00BW1300C"
+  },
+  {
+   "name": "華榮骨科診所",
+   "county": "高雄市",
+   "address": "高雄市鼓山區華榮路28號",
+   "phone": "(07)5522259",
+   "url": "https://www.clinics.com.tw/hospital/3507291208"
+  },
+  {
+   "name": "高雄市立聯合醫院",
+   "county": "高雄市",
+   "address": "高雄市鼓山區中華一路976號",
+   "phone": "(07)5552565",
+   "url": "https://webreg.kmuh.gov.tw/RSMKMUH/onlineReg/2"
+  },
+  {
+   "name": "高雄市立民生醫院",
+   "county": "高雄市",
+   "address": "高雄市苓雅區凱旋二路134號",
+   "phone": "(07)7511131",
+   "url": "https://www.kmsh.gov.tw/trenew/Doctor.aspx?dep=D0104"
+  },
+  {
+   "name": "阮綜合醫療社團法人阮綜合醫院",
+   "county": "高雄市",
+   "address": "高雄市苓雅區四維四路136號",
+   "phone": "(07)3351121",
+   "url": "https://register.yuanhosp.com.tw/register3/"
+  },
+  {
+   "name": "義大醫療財團法人義大醫院",
+   "county": "高雄市",
+   "address": "高雄市燕巢區角宿里義大路1號",
+   "phone": "(07)6150911",
+   "url": "https://www5.edah.org.tw/RegisterChooseOptionForEDH.aspx?deptCode=1C&deptDesc=%e8%81%b7%e6%a5%ad%e9%86%ab%e5%ad%b8%e7%a7%91&eng_deptDesc=Division+of+Occupational+Medicine"
+  },
+  {
+   "name": "高雄市立鳳山醫院",
+   "county": "高雄市",
+   "address": "高雄市鳳山區經武路42之1號",
+   "phone": "(07)7317123",
+   "url": "https://register.cgmh.org.tw/Department/T/T3H00A"
+  },
+  {
+   "name": "財團法人私立高雄醫學大學附設高醫岡山醫院",
+   "county": "高雄市",
+   "address": "高雄市岡山區捷安路8號",
+   "phone": "(07)6263000",
+   "url": "https://www.kmugh.org.tw/Web/WebRegistration/Registration/Index"
+  },
+  {
+   "name": "國軍左營總醫院附設民眾診療服務處",
+   "county": "高雄市",
+   "address": "高雄市左營區軍校路553號",
+   "phone": "(07)5817121",
+   "url": "https://www.pmf.tw/pmf/inform/kaohsiung/mnd2.htm"
+  },
+  {
+   "name": "健仁醫院",
+   "county": "高雄市",
+   "address": "高雄市楠梓區楠陽路136號",
+   "phone": "(07)3517166",
+   "url": "http://reg.jiannren.org.tw/JRNetReg/KReg/DivList.aspx"
+  },
+  {
+   "name": "馮文瑋皮膚專科診所",
+   "county": "高雄市",
+   "address": "高雄市楠梓區楠梓新路156號",
+   "phone": "(07)3520333",
+   "url": "https://www.facebook.com/fengskin/?locale=zh_TW"
+  },
+  {
+   "name": "馬敘強診所",
+   "county": "高雄市",
+   "address": "高雄市新興區林森一路37-1號1樓",
+   "phone": "(07)2817220",
+   "url": "http://www.cpodkmuh.org.tw/ap/cust_view.aspx?bid=1046"
+  },
+  {
+   "name": "高雄市甲仙區衛生所",
+   "county": "高雄市",
+   "address": "高雄市甲仙區中山路52號",
+   "phone": "(07)6751029",
+   "url": "https://jis.kcg.gov.tw/cp.aspx?n=77054B15FD1F5128"
+  },
+  {
+   "name": "河堤復健科診所",
+   "county": "高雄市",
+   "address": "高雄市三民區天祥二路15號",
+   "phone": "(07)3508373",
+   "url": "https://www.facebook.com/people/河堤復健科診所/61563475195564/"
+  },
+  {
+   "name": "大興骨科診所",
+   "county": "高雄市",
+   "address": "高雄市三民區正興路138號",
+   "phone": "(07)3826869",
+   "url": "https://www.facebook.com/people/%E5%A4%A7%E8%88%88%E9%AA%A8%E7%A7%91%E8%A8%BA%E6%89%80/100063807103402/"
+  },
+  {
+   "name": "祥全診所",
+   "county": "高雄市",
+   "address": "高雄市前鎮區復興三路393號2樓",
+   "phone": "(07)3340393",
+   "url": "https://www.wellbeing99.com.tw/gp/WebPage.asp?WP_SID=6"
+  },
+  {
+   "name": "嘉樂家醫診所",
+   "county": "高雄市",
+   "address": "高雄市鼓山區美術東五路141號1樓",
+   "phone": "(07)5521542",
+   "url": "https://www.gracefamily-clinic.com.tw/"
+  },
+  {
+   "name": "三軍總醫院澎湖分院附設民眾診療服務處",
+   "county": "澎湖縣",
+   "address": "澎湖縣馬公市前寮里90號服務窗口",
+   "phone": "(06)9211116",
+   "url": "https://netreg.afph.tsgh.ndmctsgh.edu.tw/"
+  },
+  {
+   "name": "天主教靈醫會醫療財團法人惠民醫院",
+   "county": "澎湖縣",
+   "address": "澎湖縣馬公市樹德路14號",
+   "phone": "(06)9272318",
+   "url": "https://www.camillians.org.tw/sch/index.php/service/schedual/"
+  },
+  {
+   "name": "屏基醫療財團法人屏東基督教醫院",
+   "county": "屏東縣",
+   "address": "屏東縣屏東市大連路60號",
+   "phone": "(08)7368686",
+   "url": "https://www.ptch.org.tw/network/reg_opdForm.asp"
+  },
+  {
+   "name": "衛生福利部屏東醫院",
+   "county": "屏東縣",
+   "address": "屏東縣屏東市自由路270號",
+   "phone": "(08)7363011",
+   "url": "https://netreg.pntn.mohw.gov.tw/OINetReg.WebRwd/Reg/DeptCalendar?DeptId=33"
+  },
+  {
+   "name": "屏東榮民總醫院",
+   "county": "屏東縣",
+   "address": "屏東縣屏東市榮總東路1號",
+   "phone": "(08)7557885",
+   "url": "https://www8.ptvgh.gov.tw/RSMPT/static/#/onlineReg"
+  },
+  {
+   "name": "國仁醫院",
+   "county": "屏東縣",
+   "address": "屏東縣屏東市民生東路12-2號",
+   "phone": "(08)7223000",
+   "url": "http://www.golden-hospital.com.tw/1_OPS_OutpatientServices.php"
+  },
+  {
+   "name": "佛教慈濟醫療財團法人關山慈濟醫院",
+   "county": "臺東縣",
+   "address": "臺東縣關山鎮長沙街303巷1號",
+   "phone": "(08)9310150",
+   "url": "https://ttw3.mmh.org.tw/find_division.php"
+  },
+  {
+   "name": "台灣基督長老教會馬偕醫療財團法人台東馬偕紀念醫院",
+   "county": "臺東縣",
+   "address": "臺東縣臺東市和平路125-5號",
+   "phone": "(08)9814880",
+   "url": "https://app.tzuchi.com.tw/tchw/OpdReg/OpdTimeShow.aspx?depart=%e5%85%a7%e7%a7%91&HospLoc=6"
+  },
+  {
+   "name": "衛生福利部臺東醫院",
+   "county": "臺東縣",
+   "address": "臺東縣臺東市五權街1號",
+   "phone": "(08)9324112",
+   "url": "https://netreg01.tait.mohw.gov.tw/OINetReg.WebRwd/Reg/DeptCalendar?DeptId=23"
+  }
+ ]
+}

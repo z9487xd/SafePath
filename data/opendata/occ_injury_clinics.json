@@ -1,0 +1,147 @@
+{
+ "dataset_name": "職業傷病診治專責醫院名單",
+ "dataset_id": "5957",
+ "publisher": "勞動部職業安全衛生署",
+ "category": "診治專責",
+ "source_url": "",
+ "source_files": [
+  "https://apiservice.mol.gov.tw/OdService/download/A17000000J-000003-U9H"
+ ],
+ "retrieved_at": "2026-10-31T17:03:55+00:00",
+ "note": "由 tools/build_medical_cache.py 產生；已移除聯絡人姓名",
+ "records": [
+  {
+   "name": "國立臺灣大學醫學院附設醫院",
+   "county": "臺北市",
+   "address": "臺北市中正區常德街1號",
+   "phone": "(02)23123456 ext.267067、267491",
+   "url": "https://www.ntuh.gov.tw/ntuh/Index.action"
+  },
+  {
+   "name": "臺北榮民總醫院",
+   "county": "臺北市",
+   "address": "臺北市北投區石牌路二段322號致德樓5樓",
+   "phone": "(02)28716101、(02)55681084",
+   "url": "https://wd.vghtpe.gov.tw/Index.action?mlangloc=zh_TW"
+  },
+  {
+   "name": "長庚醫療財團法人林口長庚紀念醫院",
+   "county": "桃園市",
+   "address": "桃園市龜山區復興街5號",
+   "phone": "(03)3281200 ext.5201",
+   "url": "https://www.cgmh.org.tw/tw/Systems/AreaInfo/5"
+  },
+  {
+   "name": "衛生福利部桃園醫院",
+   "county": "桃園市",
+   "address": "桃園市桃園區中山路1492 號",
+   "phone": "(03)3699721 ext.1218",
+   "url": "https://www.tygh.mohw.gov.tw/"
+  },
+  {
+   "name": "國立臺灣大學醫學院附設醫院新竹臺大分院新竹醫院",
+   "county": "新竹市",
+   "address": "新竹市北區經國路一段442巷25號",
+   "phone": "(03)5326151 ext.523773、523774",
+   "url": "https://www.hch.gov.tw/"
+  },
+  {
+   "name": "中國醫藥大學附設醫院",
+   "county": "臺中市",
+   "address": "臺中市北區育德路2號",
+   "phone": "(04)22052121 ext.12659、12660",
+   "url": "https://www.cmuh.cmu.edu.tw/"
+  },
+  {
+   "name": "中山醫學大學附設醫院",
+   "county": "臺中市",
+   "address": "臺中市南區建國北路一段110號",
+   "phone": "(04)36034611",
+   "url": "https://www.csh.org.tw/"
+  },
+  {
+   "name": "臺中榮民總醫院",
+   "county": "臺中市",
+   "address": "臺中市西屯區臺灣大道四段1650號",
+   "phone": "(04)23592525 ext.3630",
+   "url": "https://www.vghtc.gov.tw/"
+  },
+  {
+   "name": "童綜合醫療社團法人童綜合醫院",
+   "county": "臺中市",
+   "address": "臺中市梧棲區臺灣大道八段699號",
+   "phone": "(04)26581919 ext.58230",
+   "url": "https://www.sltung.com.tw/"
+  },
+  {
+   "name": "彰化基督教醫療財團法人彰化基督教醫院",
+   "county": "彰化縣",
+   "address": "彰化縣彰化市南校街135號",
+   "phone": "(04)7286929、(04)7238595 ext.4131/4132",
+   "url": "https://www.cch.org.tw/"
+  },
+  {
+   "name": "臺大醫學院附設醫院雲林分院",
+   "county": "雲林縣",
+   "address": "雲林縣虎尾鎮學府路95號",
+   "phone": "(05)6330002 ext.574801",
+   "url": "https://www.ylh.gov.tw/"
+  },
+  {
+   "name": "天主教中華聖母修女會醫療財團法人天主教聖馬爾定醫院",
+   "county": "嘉義市",
+   "address": "嘉義市東區大雅路二段565號",
+   "phone": "(05)2756000 ext.3318",
+   "url": "http://www.stm.org.tw/new/default.aspx"
+  },
+  {
+   "name": "國立成功大學醫學院附設醫院",
+   "county": "臺南市",
+   "address": "臺南市北區勝利路138號",
+   "phone": "(06)2353535 ext.4939",
+   "url": "https://web.hosp.ncku.edu.tw/nckm/"
+  },
+  {
+   "name": "奇美醫療財團法人奇美醫院",
+   "county": "臺南市",
+   "address": "臺南市永康區中華路901號",
+   "phone": "(06)2812811 ext.53030",
+   "url": "https://www.chimei.org.tw/index.html"
+  },
+  {
+   "name": "高雄醫學大學附設中和紀念醫院",
+   "county": "高雄市",
+   "address": "高雄市三民區自由一路100號",
+   "phone": "(07)3133604 ext.41",
+   "url": "https://www.kmuh.org.tw/KMUHInterWeb/InterWeb/Home"
+  },
+  {
+   "name": "高雄榮民總醫院",
+   "county": "高雄市",
+   "address": "高雄市左營區大中一路386號(健康照護大樓)",
+   "phone": "(07)3422121 ext.75157",
+   "url": "https://www.vghks.gov.tw/"
+  },
+  {
+   "name": "高雄市立小港醫院（委託財團法人私立高雄醫學大學經營）",
+   "county": "高雄市",
+   "address": "高雄市小港區山明路482號",
+   "phone": "(07)8026767",
+   "url": "https://www.kmsh.org.tw/index.asp"
+  },
+  {
+   "name": "長庚醫療財團法人高雄長庚紀念醫院",
+   "county": "高雄市",
+   "address": "高雄市鳥松區大埤路123號",
+   "phone": "(07)7317123 ext.8372",
+   "url": "https://cghdpt.cgmh.org.tw/branch/shk"
+  },
+  {
+   "name": "佛教慈濟醫療財團法人花蓮慈濟醫院",
+   "county": "花蓮縣",
+   "address": "花蓮縣花蓮市中央路三段707號",
+   "phone": "(03)8462972、(03)856182 ext.12144",
+   "url": "https://hlm.tzuchi.com.tw/home/"
+  }
+ ]
+}

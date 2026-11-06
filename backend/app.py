@@ -464,6 +464,17 @@ async def get_topology():
             return {"nodes": nodes_dict, "edges": data.get("edges", []), "limits": LIMITS, "sprinkler_distance": data.get("sprinkler_distance")}
     return {"nodes": {}, "edges": [], "limits": LIMITS}
 
+# 簡化平面圖（色塊）。由 tools/build_floor_plan.py 產生，座標與拓樸相同；沒有這個檔案就沒有底圖。
+floor_plan_path = os.path.abspath(os.path.join(base_dir, "../data/floor_plan.json"))
+
+@app.get("/api/floor_plan")
+async def get_floor_plan():
+    if os.path.exists(floor_plan_path):
+        with open(floor_plan_path, "r", encoding="utf-8") as f:
+            plan = json.load(f)
+            return {"zones": plan.get("zones", []), "node_offsets": plan.get("node_offsets", {})}
+    return {"zones": [], "node_offsets": {}}
+
 # The three Labour Ministry datasets, read from the on-disk cache. Separate from
 # the WebSocket feed on purpose: this is reference material a person looks up, not
 # live telemetry, so it does not belong in a frame pushed five times a second.
@@ -477,6 +488,40 @@ async def get_resources():
         print(f"[OpenData Error] {e}", flush=True)
         return {"datasets": {}, "inspection_hotlines": {},
                 "case_service_contacts": {}, "elearning_courses": []}
+
+
+# Injury and failed-inspection figures for one industry, from the three cached
+# Labour Ministry datasets. An unknown industry falls back to the default rather than
+# erroring, so a stale dropdown value cannot blank the panel.
+@app.get("/api/risk_context")
+async def get_risk_context(industry: str = opendata_client.DEFAULT_INDUSTRY):
+    try:
+        return opendata_client.risk_context(industry)
+    except Exception as e:
+        print(f"[OpenData Error] risk_context: {e}", flush=True)
+        return {"industry": "", "industries": [], "injuries": None, "inspection": None, "datasets": {}}
+
+
+# Occupational-injury clinics, rehabilitation hospitals and approved health-exam sites
+# for one county, from four cached Labour Ministry datasets. An unknown county simply
+# returns empty groups.
+@app.get("/api/medical_facilities")
+async def get_medical_facilities(county: str = ""):
+    try:
+        return opendata_client.medical_for(county)
+    except Exception as e:
+        print(f"[OpenData Error] medical_facilities: {e}", flush=True)
+        return {"county": county, "groups": [], "datasets": {}}
+
+
+# 初查不合格項目排行（勞動部 41522）。industry 留空 = 全行業合計。
+@app.get("/api/inspection_failures")
+async def get_inspection_failures(industry: str = ""):
+    try:
+        return opendata_client.inspection_summary(industry)
+    except Exception as e:
+        print(f"[OpenData Error] inspection_failures: {e}", flush=True)
+        return {"industry": industry, "industries": [], "year": "", "failed_sites": 0, "items": [], "dataset": {}}
 
 
 # 消防栓清冊（約三萬筆），build-time 轉好的靜態檔，直接整份回傳給前端地圖。

@@ -1,0 +1,3137 @@
+{
+ "dataset_name": "職業安全衛生檢查初查不合格情形按行業分(年度)",
+ "dataset_id": "41522",
+ "publisher": "勞動部職業安全衛生署",
+ "year": "114年",
+ "source_url": "",
+ "source_files": [
+  "https://apiservice.mol.gov.tw/OdService/download/A17000000J-030022-QGu"
+ ],
+ "retrieved_at": "2026-10-29T16:17:33+00:00",
+ "note": "114年 CSV 彙整；由 tools/build_risk_cache.py 產生",
+ "records": {
+  "農、林、漁、牧業": {
+   "failed_sites": 139,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 116,
+     "failed_items": 153
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 110,
+     "failed_items": 110
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 73,
+     "failed_items": 80
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 51,
+     "failed_items": 51
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 36,
+     "failed_items": 44
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 24,
+     "failed_items": 34
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 19,
+     "failed_items": 27
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 18,
+     "failed_items": 38
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 14,
+     "failed_items": 14
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 13,
+     "failed_items": 13
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 3,
+     "failed_items": 3
+    }
+   ]
+  },
+  "礦業及土石採取業": {
+   "failed_sites": 41,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 26,
+     "failed_items": 34
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 19,
+     "failed_items": 22
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 15,
+     "failed_items": 18
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 12,
+     "failed_items": 16
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 9,
+     "failed_items": 9
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 7,
+     "failed_items": 10
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 6,
+     "failed_items": 7
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 6,
+     "failed_items": 6
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 5,
+     "failed_items": 6
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 5,
+     "failed_items": 7
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 2,
+     "failed_items": 4
+    }
+   ]
+  },
+  "食品及飼品製造業": {
+   "failed_sites": 739,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 684,
+     "failed_items": 1058
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 471,
+     "failed_items": 590
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 224,
+     "failed_items": 309
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 191,
+     "failed_items": 191
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 157,
+     "failed_items": 201
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 125,
+     "failed_items": 275
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 122,
+     "failed_items": 139
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 117,
+     "failed_items": 138
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 102,
+     "failed_items": 131
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 99,
+     "failed_items": 119
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 45,
+     "failed_items": 49
+    }
+   ]
+  },
+  "飲料製造業": {
+   "failed_sites": 64,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 58,
+     "failed_items": 83
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 32,
+     "failed_items": 40
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 25,
+     "failed_items": 40
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 15,
+     "failed_items": 15
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 12,
+     "failed_items": 28
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 11,
+     "failed_items": 11
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 10,
+     "failed_items": 10
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 9,
+     "failed_items": 11
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 8,
+     "failed_items": 12
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 6,
+     "failed_items": 6
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 6,
+     "failed_items": 7
+    }
+   ]
+  },
+  "菸草製造業": {
+   "failed_sites": 5,
+   "items": [
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 3,
+     "failed_items": 5
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 3,
+     "failed_items": 3
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 2,
+     "failed_items": 2
+    },
+    {
+     "law": "職業安全衛生法第22條",
+     "item": "僱用或特約醫護人員辦理健康管理、職業病預防及健康促進",
+     "failed_sites": 2,
+     "failed_items": 2
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 1,
+     "failed_items": 1
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 1,
+     "failed_items": 1
+    },
+    {
+     "law": "職業安全衛生法第21條",
+     "item": "健康管理措施、檢查手冊內容及其他應遵行事項",
+     "failed_sites": 1,
+     "failed_items": 1
+    },
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 1,
+     "failed_items": 1
+    }
+   ]
+  },
+  "紡織業": {
+   "failed_sites": 317,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 228,
+     "failed_items": 321
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 165,
+     "failed_items": 236
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 156,
+     "failed_items": 205
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 90,
+     "failed_items": 126
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 85,
+     "failed_items": 122
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 78,
+     "failed_items": 81
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 76,
+     "failed_items": 92
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 70,
+     "failed_items": 79
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 48,
+     "failed_items": 64
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 46,
+     "failed_items": 49
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 44,
+     "failed_items": 72
+    }
+   ]
+  },
+  "成衣及服飾品製造業": {
+   "failed_sites": 31,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 36,
+     "failed_items": 48
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 27,
+     "failed_items": 34
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 12,
+     "failed_items": 15
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 11,
+     "failed_items": 11
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 10,
+     "failed_items": 30
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 10,
+     "failed_items": 10
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 9,
+     "failed_items": 9
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 4,
+     "failed_items": 4
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 4,
+     "failed_items": 5
+    },
+    {
+     "law": "職業安全衛生法第22條",
+     "item": "僱用或特約醫護人員辦理健康管理、職業病預防及健康促進",
+     "failed_sites": 4,
+     "failed_items": 5
+    }
+   ]
+  },
+  "皮革、毛皮及其製品製造業": {
+   "failed_sites": 43,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 31,
+     "failed_items": 42
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 27,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 24,
+     "failed_items": 25
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 17,
+     "failed_items": 17
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 12,
+     "failed_items": 18
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 9,
+     "failed_items": 11
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 9,
+     "failed_items": 12
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 9,
+     "failed_items": 10
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 8,
+     "failed_items": 9
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 6,
+     "failed_items": 6
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 4,
+     "failed_items": 5
+    }
+   ]
+  },
+  "木竹製品製造業": {
+   "failed_sites": 111,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 80,
+     "failed_items": 129
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 67,
+     "failed_items": 113
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 64,
+     "failed_items": 74
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 37,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 32,
+     "failed_items": 33
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 26,
+     "failed_items": 29
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 26,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 24,
+     "failed_items": 26
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 24,
+     "failed_items": 27
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 17,
+     "failed_items": 17
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 6,
+     "failed_items": 7
+    }
+   ]
+  },
+  "紙漿、紙及紙製品製造業": {
+   "failed_sites": 219,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 178,
+     "failed_items": 267
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 129,
+     "failed_items": 159
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 88,
+     "failed_items": 113
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 60,
+     "failed_items": 69
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 58,
+     "failed_items": 67
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 50,
+     "failed_items": 59
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 49,
+     "failed_items": 49
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 34,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 32,
+     "failed_items": 36
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 28,
+     "failed_items": 29
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 12,
+     "failed_items": 17
+    }
+   ]
+  },
+  "印刷及資料儲存媒體複製業": {
+   "failed_sites": 121,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 109,
+     "failed_items": 154
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 105,
+     "failed_items": 157
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 76,
+     "failed_items": 82
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 42,
+     "failed_items": 50
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 38,
+     "failed_items": 38
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 29,
+     "failed_items": 31
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 22,
+     "failed_items": 23
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 17,
+     "failed_items": 66
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 16,
+     "failed_items": 17
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 15,
+     "failed_items": 16
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 15,
+     "failed_items": 15
+    }
+   ]
+  },
+  "石油及煤製品製造業": {
+   "failed_sites": 67,
+   "items": [
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 30,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 28,
+     "failed_items": 36
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 22,
+     "failed_items": 22
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 13,
+     "failed_items": 13
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 12,
+     "failed_items": 13
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 12,
+     "failed_items": 12
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 8,
+     "failed_items": 8
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 8,
+     "failed_items": 11
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 7,
+     "failed_items": 8
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 7,
+     "failed_items": 7
+    }
+   ]
+  },
+  "化學材料及肥料製造業": {
+   "failed_sites": 513,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 308,
+     "failed_items": 368
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 259,
+     "failed_items": 309
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 131,
+     "failed_items": 151
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 123,
+     "failed_items": 134
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 108,
+     "failed_items": 132
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 62,
+     "failed_items": 75
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 61,
+     "failed_items": 64
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 56,
+     "failed_items": 61
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 54,
+     "failed_items": 61
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 53,
+     "failed_items": 61
+    }
+   ]
+  },
+  "其他化學製品製造業": {
+   "failed_sites": 549,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 385,
+     "failed_items": 460
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 381,
+     "failed_items": 508
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 189,
+     "failed_items": 227
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 151,
+     "failed_items": 199
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 105,
+     "failed_items": 117
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 105,
+     "failed_items": 115
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 101,
+     "failed_items": 132
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 77,
+     "failed_items": 94
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 64,
+     "failed_items": 73
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 56,
+     "failed_items": 67
+    }
+   ]
+  },
+  "藥品及醫用化學製品製造業": {
+   "failed_sites": 105,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 101,
+     "failed_items": 140
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 70,
+     "failed_items": 85
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 65,
+     "failed_items": 76
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 25,
+     "failed_items": 29
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 22,
+     "failed_items": 23
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 20,
+     "failed_items": 20
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 19,
+     "failed_items": 33
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 18,
+     "failed_items": 22
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 13,
+     "failed_items": 17
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 12,
+     "failed_items": 12
+    }
+   ]
+  },
+  "橡膠製品製造業": {
+   "failed_sites": 190,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 119,
+     "failed_items": 155
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 112,
+     "failed_items": 154
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 73,
+     "failed_items": 85
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 55,
+     "failed_items": 80
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 41,
+     "failed_items": 42
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 38,
+     "failed_items": 38
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 32,
+     "failed_items": 40
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 31,
+     "failed_items": 34
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 25,
+     "failed_items": 25
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 25,
+     "failed_items": 25
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 13,
+     "failed_items": 15
+    }
+   ]
+  },
+  "塑膠製品製造業": {
+   "failed_sites": 627,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 623,
+     "failed_items": 849
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 429,
+     "failed_items": 548
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 339,
+     "failed_items": 446
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 215,
+     "failed_items": 291
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 134,
+     "failed_items": 146
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 120,
+     "failed_items": 129
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 119,
+     "failed_items": 119
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 98,
+     "failed_items": 113
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 92,
+     "failed_items": 103
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "鍋爐、壓力容器(蒸氣類)安全設備不良(鍋爐及壓力容器安全規則、製造設施標準)",
+     "failed_sites": 81,
+     "failed_items": 91
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 30,
+     "failed_items": 34
+    }
+   ]
+  },
+  "非金屬礦物製品製造業": {
+   "failed_sites": 681,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 468,
+     "failed_items": 727
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 335,
+     "failed_items": 423
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 197,
+     "failed_items": 262
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 172,
+     "failed_items": 239
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 165,
+     "failed_items": 222
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 159,
+     "failed_items": 239
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 156,
+     "failed_items": 188
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 122,
+     "failed_items": 130
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 108,
+     "failed_items": 124
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 105,
+     "failed_items": 121
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 71,
+     "failed_items": 88
+    }
+   ]
+  },
+  "基本金屬製造業": {
+   "failed_sites": 483,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 388,
+     "failed_items": 541
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 229,
+     "failed_items": 302
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 179,
+     "failed_items": 292
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 164,
+     "failed_items": 219
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 97,
+     "failed_items": 127
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 95,
+     "failed_items": 112
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 83,
+     "failed_items": 110
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 77,
+     "failed_items": 92
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 66,
+     "failed_items": 74
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 62,
+     "failed_items": 66
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 52,
+     "failed_items": 68
+    }
+   ]
+  },
+  "金屬製品製造業": {
+   "failed_sites": 2455,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 1994,
+     "failed_items": 2973
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 1338,
+     "failed_items": 1728
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 1129,
+     "failed_items": 1946
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 885,
+     "failed_items": 1168
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 540,
+     "failed_items": 540
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 467,
+     "failed_items": 586
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 437,
+     "failed_items": 483
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 399,
+     "failed_items": 468
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 385,
+     "failed_items": 429
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 371,
+     "failed_items": 395
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 157,
+     "failed_items": 178
+    }
+   ]
+  },
+  "電子零組件製造業": {
+   "failed_sites": 520,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 400,
+     "failed_items": 554
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 255,
+     "failed_items": 371
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 176,
+     "failed_items": 214
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 135,
+     "failed_items": 223
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 132,
+     "failed_items": 184
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 68,
+     "failed_items": 69
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 66,
+     "failed_items": 68
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 63,
+     "failed_items": 63
+    },
+    {
+     "law": "職業安全衛生法第22條",
+     "item": "僱用或特約醫護人員辦理健康管理、職業病預防及健康促進",
+     "failed_sites": 59,
+     "failed_items": 62
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 51,
+     "failed_items": 62
+    }
+   ]
+  },
+  "電腦、電子產品及光學製品製造業": {
+   "failed_sites": 161,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 109,
+     "failed_items": 155
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 75,
+     "failed_items": 101
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 59,
+     "failed_items": 69
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 51,
+     "failed_items": 133
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 42,
+     "failed_items": 48
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 25,
+     "failed_items": 26
+    },
+    {
+     "law": "職業安全衛生法第22條",
+     "item": "僱用或特約醫護人員辦理健康管理、職業病預防及健康促進",
+     "failed_sites": 24,
+     "failed_items": 25
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 22,
+     "failed_items": 24
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 19,
+     "failed_items": 19
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 16,
+     "failed_items": 20
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 5,
+     "failed_items": 6
+    }
+   ]
+  },
+  "電力設備及配備製造業": {
+   "failed_sites": 278,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 275,
+     "failed_items": 396
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 164,
+     "failed_items": 209
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 113,
+     "failed_items": 169
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 104,
+     "failed_items": 151
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 61,
+     "failed_items": 124
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 52,
+     "failed_items": 52
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 48,
+     "failed_items": 51
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 40,
+     "failed_items": 44
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 35,
+     "failed_items": 45
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 35,
+     "failed_items": 41
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 19,
+     "failed_items": 24
+    }
+   ]
+  },
+  "機械設備製造業": {
+   "failed_sites": 1335,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 993,
+     "failed_items": 1505
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 712,
+     "failed_items": 938
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 595,
+     "failed_items": 1060
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 516,
+     "failed_items": 694
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 288,
+     "failed_items": 338
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 284,
+     "failed_items": 325
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 254,
+     "failed_items": 330
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "起重升降機具安全設備不良(起重升降機具安全規則)",
+     "failed_sites": 220,
+     "failed_items": 263
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 215,
+     "failed_items": 215
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 196,
+     "failed_items": 208
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 74,
+     "failed_items": 77
+    }
+   ]
+  },
+  "汽車及其零件製造業": {
+   "failed_sites": 240,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 240,
+     "failed_items": 337
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 159,
+     "failed_items": 190
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 102,
+     "failed_items": 134
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 85,
+     "failed_items": 134
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 54,
+     "failed_items": 55
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 45,
+     "failed_items": 45
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 41,
+     "failed_items": 45
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 40,
+     "failed_items": 52
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 36,
+     "failed_items": 49
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 33,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 17,
+     "failed_items": 23
+    }
+   ]
+  },
+  "其他運輸工具及其零件製造業": {
+   "failed_sites": 280,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 232,
+     "failed_items": 319
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 118,
+     "failed_items": 143
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 104,
+     "failed_items": 172
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 96,
+     "failed_items": 117
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 43,
+     "failed_items": 71
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 40,
+     "failed_items": 44
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 36,
+     "failed_items": 40
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 35,
+     "failed_items": 41
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 33,
+     "failed_items": 40
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 33,
+     "failed_items": 38
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 13,
+     "failed_items": 15
+    }
+   ]
+  },
+  "家具製造業": {
+   "failed_sites": 130,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 109,
+     "failed_items": 167
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 78,
+     "failed_items": 88
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 58,
+     "failed_items": 90
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 49,
+     "failed_items": 64
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 37,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 33,
+     "failed_items": 36
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 32,
+     "failed_items": 35
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 26,
+     "failed_items": 30
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 25,
+     "failed_items": 35
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 19,
+     "failed_items": 19
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 2,
+     "failed_items": 2
+    }
+   ]
+  },
+  "其他製造業": {
+   "failed_sites": 227,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 223,
+     "failed_items": 285
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 144,
+     "failed_items": 173
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 109,
+     "failed_items": 145
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 78,
+     "failed_items": 107
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 60,
+     "failed_items": 60
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 44,
+     "failed_items": 45
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 36,
+     "failed_items": 53
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 34,
+     "failed_items": 43
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "一般機械安全設備不良(職業安全衛生設施規則第41－57條)",
+     "failed_sites": 33,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 27,
+     "failed_items": 32
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 10,
+     "failed_items": 12
+    }
+   ]
+  },
+  "產業用機械設備維修及安裝業": {
+   "failed_sites": 101,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 98,
+     "failed_items": 132
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 46,
+     "failed_items": 55
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 27,
+     "failed_items": 27
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 24,
+     "failed_items": 28
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 24,
+     "failed_items": 36
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 23,
+     "failed_items": 36
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 16,
+     "failed_items": 16
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 11,
+     "failed_items": 14
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 11,
+     "failed_items": 11
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 10,
+     "failed_items": 13
+    }
+   ]
+  },
+  "電力及燃氣供應業": {
+   "failed_sites": 218,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 145,
+     "failed_items": 188
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 56,
+     "failed_items": 65
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 56,
+     "failed_items": 63
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 44,
+     "failed_items": 46
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 37,
+     "failed_items": 50
+    },
+    {
+     "law": "職業安全衛生法第27條",
+     "item": "共同作業應採規定必要措施",
+     "failed_sites": 32,
+     "failed_items": 62
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 29,
+     "failed_items": 31
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "高壓氣體容器及設備安全設備不良(高壓氣體勞工安全規則及有關規定)",
+     "failed_sites": 28,
+     "failed_items": 39
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 25,
+     "failed_items": 28
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 25,
+     "failed_items": 25
+    }
+   ]
+  },
+  "用水供應及污染整治業": {
+   "failed_sites": 340,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 244,
+     "failed_items": 330
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 117,
+     "failed_items": 158
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 110,
+     "failed_items": 144
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 91,
+     "failed_items": 127
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 66,
+     "failed_items": 66
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 55,
+     "failed_items": 58
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 52,
+     "failed_items": 58
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 51,
+     "failed_items": 71
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 49,
+     "failed_items": 55
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 48,
+     "failed_items": 62
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 15,
+     "failed_items": 20
+    }
+   ]
+  },
+  "營建工程業": {
+   "failed_sites": 14726,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 10611,
+     "failed_items": 16020
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 8788,
+     "failed_items": 13547
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 3429,
+     "failed_items": 3535
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 2752,
+     "failed_items": 3546
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 2392,
+     "failed_items": 2392
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 2225,
+     "failed_items": 2936
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "施工架及施工構台安全不良(營造安全衛生設施標準第39－62之2條)",
+     "failed_sites": 1735,
+     "failed_items": 2082
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 1495,
+     "failed_items": 1633
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 1432,
+     "failed_items": 1552
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 1161,
+     "failed_items": 1332
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 105,
+     "failed_items": 115
+    }
+   ]
+  },
+  "批發及零售業": {
+   "failed_sites": 2814,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 1604,
+     "failed_items": 2163
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 1316,
+     "failed_items": 1593
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 851,
+     "failed_items": 2127
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 792,
+     "failed_items": 800
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 783,
+     "failed_items": 1032
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 746,
+     "failed_items": 1004
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 564,
+     "failed_items": 694
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 381,
+     "failed_items": 418
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 307,
+     "failed_items": 340
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 230,
+     "failed_items": 246
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 107,
+     "failed_items": 120
+    }
+   ]
+  },
+  "運輸及倉儲業": {
+   "failed_sites": 684,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 494,
+     "failed_items": 660
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 252,
+     "failed_items": 282
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 196,
+     "failed_items": 407
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 156,
+     "failed_items": 181
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 149,
+     "failed_items": 149
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 142,
+     "failed_items": 165
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 134,
+     "failed_items": 196
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 81,
+     "failed_items": 85
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 79,
+     "failed_items": 81
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "起重升降機具安全設備不良(起重升降機具安全規則)",
+     "failed_sites": 56,
+     "failed_items": 72
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 17,
+     "failed_items": 17
+    }
+   ]
+  },
+  "住宿及餐飲業": {
+   "failed_sites": 1524,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 699,
+     "failed_items": 877
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 543,
+     "failed_items": 604
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 520,
+     "failed_items": 520
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 431,
+     "failed_items": 1093
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 375,
+     "failed_items": 529
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 360,
+     "failed_items": 449
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 270,
+     "failed_items": 290
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 242,
+     "failed_items": 259
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 201,
+     "failed_items": 241
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 183,
+     "failed_items": 204
+    }
+   ]
+  },
+  "出版及影音等內容傳播業": {
+   "failed_sites": 218,
+   "items": [
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 148,
+     "failed_items": 490
+    },
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 114,
+     "failed_items": 136
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 54,
+     "failed_items": 54
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 52,
+     "failed_items": 60
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 41,
+     "failed_items": 56
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 34,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第22條",
+     "item": "僱用或特約醫護人員辦理健康管理、職業病預防及健康促進",
+     "failed_sites": 21,
+     "failed_items": 25
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 13,
+     "failed_items": 19
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 12,
+     "failed_items": 13
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 11,
+     "failed_items": 14
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 4,
+     "failed_items": 4
+    }
+   ]
+  },
+  "金融及保險業": {
+   "failed_sites": 108,
+   "items": [
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 92,
+     "failed_items": 153
+    },
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 30,
+     "failed_items": 36
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 18,
+     "failed_items": 21
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 15,
+     "failed_items": 16
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 14,
+     "failed_items": 15
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 12,
+     "failed_items": 12
+    },
+    {
+     "law": "職業安全衛生法第22條",
+     "item": "僱用或特約醫護人員辦理健康管理、職業病預防及健康促進",
+     "failed_sites": 9,
+     "failed_items": 11
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 5,
+     "failed_items": 8
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 4,
+     "failed_items": 5
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 3,
+     "failed_items": 4
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 1,
+     "failed_items": 1
+    }
+   ]
+  },
+  "不動產業": {
+   "failed_sites": 199,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 164,
+     "failed_items": 310
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 103,
+     "failed_items": 105
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 92,
+     "failed_items": 151
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 86,
+     "failed_items": 208
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 80,
+     "failed_items": 80
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 28,
+     "failed_items": 37
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 20,
+     "failed_items": 21
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 17,
+     "failed_items": 18
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 15,
+     "failed_items": 19
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 15,
+     "failed_items": 17
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 4,
+     "failed_items": 5
+    }
+   ]
+  },
+  "專業、科學及技術服務業": {
+   "failed_sites": 673,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 496,
+     "failed_items": 716
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 287,
+     "failed_items": 675
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 194,
+     "failed_items": 218
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 183,
+     "failed_items": 183
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "起重升降機具安全設備不良(起重升降機具安全規則)",
+     "failed_sites": 128,
+     "failed_items": 181
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 121,
+     "failed_items": 140
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 80,
+     "failed_items": 88
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 76,
+     "failed_items": 90
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 63,
+     "failed_items": 89
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身體防護不良(職業安全衛生設施規則第277－291條)",
+     "failed_sites": 62,
+     "failed_items": 62
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 4,
+     "failed_items": 4
+    }
+   ]
+  },
+  "支援服務業": {
+   "failed_sites": 828,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 475,
+     "failed_items": 653
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 456,
+     "failed_items": 1146
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 236,
+     "failed_items": 253
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 163,
+     "failed_items": 163
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 139,
+     "failed_items": 154
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "起重升降機具安全設備不良(起重升降機具安全規則)",
+     "failed_sites": 113,
+     "failed_items": 158
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 110,
+     "failed_items": 118
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 76,
+     "failed_items": 90
+    },
+    {
+     "law": "職業安全衛生法第22條",
+     "item": "僱用或特約醫護人員辦理健康管理、職業病預防及健康促進",
+     "failed_sites": 71,
+     "failed_items": 75
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 55,
+     "failed_items": 73
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 10,
+     "failed_items": 12
+    }
+   ]
+  },
+  "公共行政及國防；強制性社會安全": {
+   "failed_sites": 124,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 56,
+     "failed_items": 75
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 51,
+     "failed_items": 72
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 27,
+     "failed_items": 36
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 26,
+     "failed_items": 27
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他防止危害設備(職業安全衛生設施規則第114－167,315－317條等有關設備規定)",
+     "failed_sites": 20,
+     "failed_items": 21
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 18,
+     "failed_items": 19
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 17,
+     "failed_items": 17
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 12,
+     "failed_items": 12
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 10,
+     "failed_items": 10
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 9,
+     "failed_items": 9
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 3,
+     "failed_items": 3
+    }
+   ]
+  },
+  "教育業": {
+   "failed_sites": 461,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 261,
+     "failed_items": 349
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 257,
+     "failed_items": 300
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 184,
+     "failed_items": 296
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 170,
+     "failed_items": 408
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 164,
+     "failed_items": 164
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 163,
+     "failed_items": 242
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 86,
+     "failed_items": 115
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 75,
+     "failed_items": 82
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 67,
+     "failed_items": 69
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 48,
+     "failed_items": 56
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 18,
+     "failed_items": 18
+    }
+   ]
+  },
+  "醫療保健及社會工作服務業": {
+   "failed_sites": 520,
+   "items": [
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 300,
+     "failed_items": 747
+    },
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 233,
+     "failed_items": 282
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 156,
+     "failed_items": 208
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 156,
+     "failed_items": 167
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 121,
+     "failed_items": 121
+    },
+    {
+     "law": "職業安全衛生法第22條",
+     "item": "僱用或特約醫護人員辦理健康管理、職業病預防及健康促進",
+     "failed_sites": 60,
+     "failed_items": 77
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 56,
+     "failed_items": 59
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 47,
+     "failed_items": 65
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 41,
+     "failed_items": 46
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 36,
+     "failed_items": 38
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 24,
+     "failed_items": 26
+    }
+   ]
+  },
+  "藝術、娛樂及休閒服務業": {
+   "failed_sites": 146,
+   "items": [
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 87,
+     "failed_items": 278
+    },
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 66,
+     "failed_items": 78
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 56,
+     "failed_items": 60
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 36,
+     "failed_items": 36
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 32,
+     "failed_items": 45
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 23,
+     "failed_items": 27
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 15,
+     "failed_items": 16
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 12,
+     "failed_items": 13
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 11,
+     "failed_items": 14
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "墜落、物體飛落災害防止安全設施不良(職業安全衛生設施規則第224－238條)",
+     "failed_sites": 9,
+     "failed_items": 11
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 5,
+     "failed_items": 5
+    }
+   ]
+  },
+  "其他服務業": {
+   "failed_sites": 310,
+   "items": [
+    {
+     "law": "職業安全衛生法第23條",
+     "item": "安全衛生管理組織人員",
+     "failed_sites": 172,
+     "failed_items": 241
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "勞工身心健康保護措施(職業安全衛生設施規則第324-1－324-6條)",
+     "failed_sites": 130,
+     "failed_items": 357
+    },
+    {
+     "law": "職業安全衛生法第32條",
+     "item": "安全衛生教育訓練",
+     "failed_sites": 101,
+     "failed_items": 113
+    },
+    {
+     "law": "職業安全衛生法第10條",
+     "item": "作業環境測定、危險物、有害物標示",
+     "failed_sites": 89,
+     "failed_items": 132
+    },
+    {
+     "law": "職業安全衛生法第34條",
+     "item": "安全衛生工作守則",
+     "failed_sites": 58,
+     "failed_items": 58
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "其他",
+     "failed_sites": 55,
+     "failed_items": 58
+    },
+    {
+     "law": "職業安全衛生法第20條",
+     "item": "體格檢查、健康檢查",
+     "failed_sites": 47,
+     "failed_items": 52
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "電氣設備安全設施不良(職業安全衛生設施規則第239－276條)",
+     "failed_sites": 36,
+     "failed_items": 45
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "特殊危險機具安全設備不良(職業安全衛生設施規則第87－113條)",
+     "failed_sites": 26,
+     "failed_items": 28
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "工作場所及通道不良(職業安全衛生設施規則第21－40條)",
+     "failed_sites": 26,
+     "failed_items": 26
+    },
+    {
+     "law": "職業安全衛生法第6條",
+     "item": "危險場所爆炸、火災、腐蝕防止安全設備不良(職業安全衛生設施規則第168－223條)",
+     "failed_sites": 23,
+     "failed_items": 24
+    }
+   ]
+  }
+ }
+}

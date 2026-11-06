@@ -6,7 +6,7 @@
 <title>SafePath 現場監控台</title>
 
 <script>try{var t=localStorage.getItem("safepath-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
-<link rel="stylesheet" href="/static/dashboard.css?v=20261029-9">
+<link rel="stylesheet" href="/static/dashboard.css?v=20261029-23">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
@@ -14,14 +14,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 </head>
 <body>
-  <div id="view-tabs" role="tablist" aria-label="主要頁面">
+  <div id="view-tabs" role="tablist" aria-orientation="vertical" aria-label="主要頁面">
     <button class="view-tab active" id="tab-monitor" role="tab" aria-selected="true" data-view="monitor">即時監控</button>
     <button class="view-tab" id="tab-resources" role="tab" aria-selected="false" data-view="resources">災後應變與職安資源</button>
     <button class="view-tab" id="tab-hydrants" role="tab" aria-selected="false" data-view="hydrants">消防栓地圖</button>
   </div>
       <header>
         <div class="brand">
-          <h1><span class="brand-icon">S</span> SafePath <span class="brand-divider">/</span> 現場監控</h1>
+          <h1><span class="brand-icon">S</span> <span class="brand-name">SafePath</span> <span class="brand-divider">/</span> 現場監控</h1>
           <div class="subtitle">智慧疏散導引與現場環境監測</div>
         </div>
         <div class="header-meta">
@@ -60,6 +60,7 @@
           <button id="map-zoom-in" type="button" aria-label="放大地圖">＋</button>
           <button id="map-readable" type="button">重設</button>
           <button id="map-proportion" type="button" aria-pressed="false">比例</button>
+          <button id="map-plan" type="button" aria-pressed="false" disabled>底圖</button>
           <button id="map-details" type="button">節點列表</button>
         </div>
       </div>
@@ -81,6 +82,7 @@
           </defs>
           <rect class="map-bg" width="400" height="400"/>
           <rect width="400" height="400" fill="url(#grid)"/>
+          <g id="layer-plan"></g>
           <g id="layer-heat"></g>
           <g id="layer-edges"></g>
           <g id="layer-path"></g>
@@ -92,25 +94,25 @@
 
       <div id="legend-bar">
         <span class="legend-item"><i class="role-key arrow-key"></i>箭頭導引</span>
-        <span class="legend-item"><i class="role-key water-key"></i>撒水節點</span>
+        <span class="legend-item"><i class="role-key water-key"></i>滅火節點</span>
         <span class="legend-item"><i class="role-key sensor-key"></i>僅感測</span>
         <span class="legend-item"><i class="status-dot"></i>正常</span>
         <span class="legend-item"><i class="status-dot danger"></i>危險</span>
-        <span class="legend-item">青環：撒水啟動</span>
+        <span class="legend-item">青環：滅火啟動</span>
       </div>
     </div>
 
     <aside id="side-panel">
       <section class="panel-section control-card">
-        <div class="panel-header"><span>撒水控制</span><span class="count">LED 模擬裝置</span></div>
+        <div class="panel-header"><span>滅火控制</span><span class="count">LED 模擬裝置</span></div>
         <div class="panel-body">
-          <label class="control-label" for="sprinkler-target">指定撒水節點</label>
-          <select id="sprinkler-target" aria-label="指定撒水節點"></select>
+          <label class="control-label" for="sprinkler-target">指定滅火節點</label>
+          <select id="sprinkler-target" aria-label="指定滅火節點"></select>
           <div class="output-state"><span id="sprinkler-indicator"></span><div><strong id="sprinkler-output">等待節點資料</strong><small id="sprinkler-mode">以現場節點回報確認狀態</small></div></div>
-          <button id="sprinkler-on" class="primary-control" type="button">啟動撒水 <span>30 秒</span></button>
+          <button id="sprinkler-on" class="primary-control" type="button">啟動滅火 <span>30 秒</span></button>
           <button id="sprinkler-auto" class="secondary-control" type="button">結束手動・恢復自動</button>
           <div id="control-message" role="status" aria-live="polite">選擇節點後即可手動啟動。</div>
-          <p class="control-note">恢復自動後，危險條件成立時仍會撒水。</p>
+          <p class="control-note">恢復自動後，危險條件成立時仍會滅火。</p>
         </div>
       </section>
       <section class="panel-section node-inspector">
@@ -136,7 +138,7 @@
                 <th class="num">加權</th>
                 <th>下一跳</th>
                 <th>狀態</th>
-                <th>撒水 LED</th>
+                <th>滅火 LED</th>
               </tr>
             </thead>
             <tbody id="node-tbody"></tbody>
@@ -150,6 +152,8 @@
     <div id="sub-tabs" role="tablist" aria-label="資源類別">
       <button class="sub-tab active" id="subtab-notify" role="tab" aria-selected="true" data-subview="notify">罹災通報比對</button>
       <button class="sub-tab" id="subtab-case" role="tab" aria-selected="false" data-subview="case">職災勞工個案服務窗口</button>
+      <button class="sub-tab" id="subtab-medical" role="tab" aria-selected="false" data-subview="medical">傷後就醫與復健</button>
+      <button class="sub-tab" id="subtab-inspection" role="tab" aria-selected="false" data-subview="inspection">常見檢查缺失</button>
       <button class="sub-tab" id="subtab-courses" role="tab" aria-selected="false" data-subview="courses">職安素養學習資源</button>
     </div>
 
@@ -175,6 +179,30 @@
           </div>
         </div>
         <div id="res-notify-result"></div>
+
+        <div class="report-form" id="report-form">
+          <div class="report-title">通報資料整理</div>
+          <p class="res-note">依職災統計填報系統的代碼整理通報內容。人數與縣市沿用上方欄位，產生的文字是草稿，不是正式通報；請以專線或通報系統送出。</p>
+          <div class="field-row"><label for="rep-time">發生時間</label><input type="datetime-local" id="rep-time"></div>
+          <div class="field-row"><label for="rep-place">發生地點（廠內位置）</label><input type="text" id="rep-place" placeholder="例：烹調區、前處理區" maxlength="60"></div>
+          <div class="field-row">
+            <label for="rep-type">災害類型</label>
+            <select id="rep-type"></select>
+            <div class="field-hint" id="rep-type-desc"></div>
+            <button type="button" id="rep-suggest" class="secondary-control">依目前警示帶入建議</button>
+            <div class="field-hint" id="rep-suggest-msg" role="status"></div>
+          </div>
+          <div class="field-row"><label for="rep-part">受傷部位</label><select id="rep-part"></select></div>
+          <div class="field-row-inline">
+            <div class="field-row"><label for="rep-agent-group">媒介物分類</label><select id="rep-agent-group"></select></div>
+            <div class="field-row"><label for="rep-agent">媒介物</label><select id="rep-agent"></select></div>
+          </div>
+          <div class="field-row"><label for="rep-disability">失能傷害種類</label><select id="rep-disability"></select></div>
+          <label class="control-label" for="rep-output">通報摘要</label>
+          <textarea id="rep-output" class="report-output" readonly rows="13"></textarea>
+          <button type="button" id="rep-copy" class="primary-control">複製通報摘要</button>
+          <div class="field-hint" id="rep-copy-msg" role="status"></div>
+        </div>
         <div class="res-note">
           門檻依職業安全衛生法第37條：發生死亡災害、罹災人數三人以上、罹災人數一人以上且需住院治療，
           雇主應於8小時內通報勞動檢查機構。三款各自獨立，任一款成立即須通報。
@@ -200,10 +228,37 @@
       </div>
     </section>
 
+    <section class="res-card res-subview hidden" id="subview-medical">
+      <div class="panel-header">傷後就醫與復健</div>
+      <div class="panel-body">
+        <div class="emergency-note" role="note">緊急傷病、有生命危險時，請先撥打 <b>119</b>。下列名單供後續診治、復健與健康檢查使用，不是急救資源。</div>
+        <div class="field-row">
+          <label for="res-county-med">所在縣市</label>
+          <select id="res-county-med"></select>
+        </div>
+        <div id="res-medical-result" aria-live="polite"></div>
+        <div class="res-note" id="res-medical-source"></div>
+      </div>
+    </section>
+
+    <section class="res-card res-subview hidden" id="subview-inspection">
+      <div class="panel-header">常見檢查缺失</div>
+      <div class="panel-body">
+        <div class="res-note" role="note">這是勞動檢查「初查不合格」的統計，用來認識各行業容易被查到的缺失，不是處罰紀錄，也不是本場域的評分。</div>
+        <div class="field-row">
+          <label for="res-industry">行業</label>
+          <select id="res-industry"></select>
+        </div>
+        <div id="res-inspection-result" aria-live="polite"></div>
+        <div class="res-note" id="res-inspection-source"></div>
+      </div>
+    </section>
+
     <section class="res-card res-subview hidden" id="subview-courses">
       <div class="panel-header">職安素養學習資源</div>
       <div class="panel-body">
         <div id="res-course-list" class="course-list"></div>
+        <div class="res-note" id="res-course-source"></div>
         <div class="course-footer">
           <a href="https://labor-elearning.mol.gov.tw/" target="_blank" rel="noopener">
             全民勞教e網 → 查看全部14大類、131門課程
@@ -235,9 +290,9 @@
   label();
 })();
 </script>
-<script src="/static/mesh-view.js?v=20261029-9"></script>
+<script src="/static/mesh-view.js?v=20261029-23"></script>
 <script src="/static/disaster-map.js"></script>
-<script src="/static/resources-view.js?v=20261029-9"></script>
+<script src="/static/resources-view.js?v=20261029-23"></script>
 
 </body>
 </html>

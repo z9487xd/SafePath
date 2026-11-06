@@ -1,10 +1,13 @@
 {
   "dataset_name": "全民勞教e網課程",
-  "dataset_id": "A17000000J-020052-GZl",
+  "dataset_id": "6643",
   "publisher": "勞動部",
-  "source_url": "",
-  "retrieved_at": "",
-  "note": "本專案僅收錄與火災、避難、防爆相關的課程子集。 source_url 與 retrieved_at 須人工查證後填入；留空即代表本檔為離線快取而非即時查詢。",
+  "source_url": "https://data.gov.tw/dataset/6643",
+  "retrieved_at": "2026-11-06T08:47:35+00:00",
+  "note": "資料集共 131 門課，本專案人工挑選與火災、避難、防爆、職災預防相關的 6 門；每門課的課程網址都已與資料集逐筆比對。",
+  "source_files": [
+    "https://apiservice.mol.gov.tw/OdService/download/A17000000J-020052-GZl"
+  ],
   "records": [
     {
       "title": "勞工安全與職業傷害預防概論",

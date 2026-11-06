@@ -22,6 +22,7 @@
     };
 
     const el = id => document.getElementById(id);
+    const planLayer = el("layer-plan");
     const heatLayer = el("layer-heat");
     const edgesLayer = el("layer-edges");
     const pathLayer = el("layer-path");
@@ -40,7 +41,7 @@
     let commandMessage = "選擇節點後即可手動啟動。";
     let commandError = false;
         const isExit = id => !!topology[id] && topology[id].type === "exit";
-    const roleLabel = id => ({arrow:"箭頭", sprinkler:"撒水", sensor:"僅感測", exit:"出口"}[topology[id].type] || "節點");
+    const roleLabel = id => ({arrow:"箭頭", sprinkler:"滅火", sensor:"僅感測", exit:"出口"}[topology[id].type] || "節點");
     const isSprinkler = id => topology[id]?.type === "sprinkler";
     const sensorIds = () => Object.keys(topology).filter(id => !isExit(id));
 
@@ -245,7 +246,7 @@
           pendingControls.delete(id);
           if (command.action === "on") confirmedManual.add(id);
           else confirmedManual.delete(id);
-          commandMessage = `${id} 號：${command.action === "on" ? "節點已確認手動撒水啟動，持續 30 秒。" : "節點已確認恢復自動。"}`;
+          commandMessage = `${id} 號：${command.action === "on" ? "節點已確認手動滅火啟動，持續 30 秒。" : "節點已確認恢復自動。"}`;
           commandError = false;
         } else if (Date.now() > command.deadline) {
           pendingControls.delete(id);
@@ -257,12 +258,12 @@
         const report = nodeState[id];
         if (report && report.status !== "OFFLINE" && !report.sprinkler_manual && !pendingControls.has(id)) {
           confirmedManual.delete(id);
-          if (!pendingControls.size) commandMessage = `${id} 號：手動撒水已結束，已恢復自動${report.sprinkler_auto ? "撒水。" : "監測。"}`;
+          if (!pendingControls.size) commandMessage = `${id} 號：手動滅火已結束，已恢復自動${report.sprinkler_auto ? "滅火。" : "監測。"}`;
         }
       }
       const state = nodeState[target];
       const online = state && state.status !== "OFFLINE";
-      el("sprinkler-output").textContent = !online ? "節點未連線" : state.sprinkler_active ? "撒水已啟動" : "待命中";
+      el("sprinkler-output").textContent = !online ? "節點未連線" : state.sprinkler_active ? "滅火已啟動" : "待命中";
       el("sprinkler-mode").textContent = !online ? "等待節點回報" : state.sprinkler_manual ? "手動模式 · 30 秒後自動結束" : state.sprinkler_auto ? "危險觸發 · 自動模式" : "自動監測中";
       el("sprinkler-indicator").classList.toggle("active", !!online && state.sprinkler_active);
       el("sprinkler-on").disabled = pendingControls.has(target);
@@ -319,8 +320,8 @@
         if (isSprinkler(id)) {
           const busy = pendingControls.has(id);
           row.cells[6].querySelector("div").textContent = busy ? "等待節點確認…" :
-            !state || state.status === "OFFLINE" ? "撒水狀態未知" : state.sprinkler_manual ? "撒水（手動）" :
-            state.sprinkler_auto ? "撒水（自動）" : "自動待命";
+            !state || state.status === "OFFLINE" ? "滅火狀態未知" : state.sprinkler_manual ? "滅火（手動）" :
+            state.sprinkler_auto ? "滅火（自動）" : "自動待命";
           row.cells[6].querySelectorAll("button").forEach(button => {button.disabled = busy;});
         } else row.cells[6].textContent = "—";
       });
@@ -394,6 +395,9 @@
       if (!pts.length) return;
       const pad = 95;
       const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+      for (const z of planVisible ? planRects() : []) {
+        xs.push(z.x, z.x + z.w); ys.push(z.y, z.y + z.h);
+      }
       const x = Math.min(...xs) - pad, y = Math.min(...ys) - pad;
       const w = Math.max(...xs) - Math.min(...xs) + pad * 2;
       const h = Math.max(...ys) - Math.min(...ys) + pad * 2;
@@ -409,9 +413,34 @@
       });
     }
 
+    // The floor plan is drawn in the same source coordinates as the nodes, so it has to
+    // follow the same display squeeze that bootstrap() and the 比例 button apply to them
+    // (see the sourceY handling there). Only the bottom exit is nudged down 50, so the
+    // plan's lower part is stretched by the same 50 to keep that exit on the wall.
+    let floorPlan = [];
+    let planVisible = false;
+    function planRects() {
+      const bottom = Math.max(...floorPlan.map(z => z.y + z.h));
+      const squeeze = originalProportions ? 1 : .45;
+      const fy = y => y * squeeze + (!originalProportions && y > 1400 && bottom > 1400 ? 50 * (y - 1400) / (bottom - 1400) : 0);
+      return floorPlan.map(z => ({kind: z.kind, x: z.x, y: fy(z.y), w: z.w, h: fy(z.y + z.h) - fy(z.y)}));
+    }
+    function renderPlan() {
+      planLayer.innerHTML = "";
+      if (!planVisible) return;
+      for (const z of planRects()) {
+        const rect = document.createElementNS(SVG_NS, "rect");
+        rect.setAttribute("x", z.x); rect.setAttribute("y", z.y);
+        rect.setAttribute("width", z.w); rect.setAttribute("height", z.h);
+        rect.setAttribute("class", `plan-zone plan-${z.kind}`);
+        planLayer.appendChild(rect);
+      }
+    }
+
     function initMap() {
       fitViewBox();
       resizeMap();
+      renderPlan();
       edgesLayer.innerHTML = "";
       heatLayer.innerHTML = "";
       pathLayer.innerHTML = "";
@@ -571,6 +600,8 @@
       applySource(payload.source);
       refresh();
       renderAlerts(payload.compliance_alerts);
+      // 提供給「通報資料整理」表單參考目前的警示類型。
+      window.SafePathLive = {alerts: payload.compliance_alerts || []};
     }
 
     // Normally served by the backend itself. The file:// case is only for
@@ -644,10 +675,35 @@
     el("map-zoom-out").addEventListener("click",()=>zoomMap(1/1.25));
     el("map-readable").addEventListener("click",resizeMap);
     el("map-details").addEventListener("click",()=>{el("node-details").open=!el("node-details").open;if(el("node-details").open)el("node-details").scrollIntoView({behavior:"smooth",block:"start"});});
-    el("map-proportion").addEventListener("click",()=>{
-      originalProportions=!originalProportions;
-      for(const node of Object.values(topology)) node.y=node.sourceY*(originalProportions?1:.45)+(node.type === "exit" && node.sourceY > 1400 && !originalProportions ? 50 : 0);
+    // Display position of every node. While the base map is on, some nodes are drawn at an
+    // offset so they sit where they stand on the picture; routing never sees the offset.
+    let planNodeOffsets = {};
+    function placeNodes() {
+      for (const [id, node] of Object.entries(topology)) {
+        const [dx = 0, dy = 0] = (planVisible && planNodeOffsets[id]) || [];
+        node.x = node.sourceX + dx;
+        node.y = (node.sourceY + dy) * (originalProportions ? 1 : .45) + (node.type === "exit" && node.sourceY > 1400 && !originalProportions ? 50 : 0);
+      }
+    }
+    function setProportions(original) {
+      originalProportions=original;
+      placeNodes();
       el("map-proportion").setAttribute("aria-pressed",String(originalProportions));
+    }
+    el("map-proportion").addEventListener("click",()=>{
+      setProportions(!originalProportions);
+      initMap();resizeMap();refresh();
+    });
+    // The picture is drawn at its own proportions, which the squeezed default layout would
+    // distort, so the base map switches the layout to original proportions while it is on
+    // and puts the previous choice back when it goes off.
+    let proportionBeforePlan = null;
+    el("map-plan").addEventListener("click",()=>{
+      planVisible=!planVisible;
+      placeNodes();
+      if (planVisible) { proportionBeforePlan=originalProportions; setProportions(true); }
+      else if (proportionBeforePlan!==null) { setProportions(proportionBeforePlan); proportionBeforePlan=null; }
+      el("map-plan").setAttribute("aria-pressed",String(planVisible));
       initMap();resizeMap();refresh();
     });
     const viewport=el("map-viewport");
@@ -682,14 +738,24 @@
         // Compress vertical whitespace for wide screens; original proportions
         // remain available without changing the topology or trigger distance.
         topology = Object.fromEntries(Object.entries(loaded.nodes).map(([id, node]) =>
-          [id, {...node, sourceY: node.y, y: node.y * (originalProportions ? 1 : .45) + (node.type === "exit" && node.y > 1400 && !originalProportions ? 50 : 0)}]));
+          [id, {...node, sourceX: node.x, sourceY: node.y, y: node.y * (originalProportions ? 1 : .45) + (node.type === "exit" && node.y > 1400 && !originalProportions ? 50 : 0)}]));
         edges = loaded.edges || [];
         limits = loaded.limits || {};
 
         el("sprinkler-target").replaceChildren(...sensorIds().filter(isSprinkler).map(id=>{
-          const option=document.createElement("option");option.value=id;option.textContent=`${id} 號 · 撒水節點`;return option;
+          const option=document.createElement("option");option.value=id;option.textContent=`${id} 號 · 滅火節點`;return option;
         }));
         el("map-proportion").setAttribute("aria-pressed",String(originalProportions));
+        // The floor plan is decoration: without it the map and routing work as before.
+        try {
+          const planRes = await fetch(`${window.location.protocol === "file:" ? "http://127.0.0.1:8000" : ""}/api/floor_plan`);
+          const plan = planRes.ok ? await planRes.json() : {};
+          floorPlan = plan.zones || [];
+          planNodeOffsets = plan.node_offsets || {};
+        } catch (err) {
+          console.warn("floor plan unavailable", err);
+        }
+        el("map-plan").disabled = !floorPlan.length;
         selectedNodeId="1";
         initMap();
         resizeMap();

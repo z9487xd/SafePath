@@ -1,0 +1,29 @@
+{
+ "dataset_name": "職業災害統計網路填報系統失能傷害種類代號表",
+ "dataset_id": "41467",
+ "publisher": "勞動部職業安全衛生署",
+ "source_url": "",
+ "source_files": [
+  "https://apiservice.mol.gov.tw/OdService/download/A17000000J-030005-sJp"
+ ],
+ "retrieved_at": "2026-11-02T00:43:41+00:00",
+ "note": "由 tools/build_report_codes.py 產生",
+ "records": [
+  {
+   "code": "10",
+   "name": "死亡"
+  },
+  {
+   "code": "20",
+   "name": "永久全失能"
+  },
+  {
+   "code": "30",
+   "name": "永久部份失能"
+  },
+  {
+   "code": "40",
+   "name": "暫時全失能"
+  }
+ ]
+}

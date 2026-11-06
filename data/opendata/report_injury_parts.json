@@ -1,0 +1,109 @@
+{
+ "dataset_name": "職業災害統計網路填報系統受傷部位代號表",
+ "dataset_id": "41469",
+ "publisher": "勞動部職業安全衛生署",
+ "source_url": "",
+ "source_files": [
+  "https://apiservice.mol.gov.tw/OdService/download/A17000000J-030006-sNo"
+ ],
+ "retrieved_at": "2026-11-02T00:43:41+00:00",
+ "note": "由 tools/build_report_codes.py 產生",
+ "records": [
+  {
+   "code": "1",
+   "name": "頭(含眼、耳、鼻、口腔、下顎骨)"
+  },
+  {
+   "code": "2",
+   "name": "臉頰（不含頭部之臉顏）"
+  },
+  {
+   "code": "3",
+   "name": "頸"
+  },
+  {
+   "code": "4",
+   "name": "肩"
+  },
+  {
+   "code": "5",
+   "name": "鎖骨"
+  },
+  {
+   "code": "6",
+   "name": "上膊"
+  },
+  {
+   "code": "7",
+   "name": "肘"
+  },
+  {
+   "code": "8",
+   "name": "前膊"
+  },
+  {
+   "code": "9",
+   "name": "腕"
+  },
+  {
+   "code": "10",
+   "name": "胸"
+  },
+  {
+   "code": "11",
+   "name": "肋骨"
+  },
+  {
+   "code": "12",
+   "name": "背"
+  },
+  {
+   "code": "13",
+   "name": "手"
+  },
+  {
+   "code": "14",
+   "name": "指"
+  },
+  {
+   "code": "15",
+   "name": "腹"
+  },
+  {
+   "code": "16",
+   "name": "臀"
+  },
+  {
+   "code": "17",
+   "name": "鼠蹊"
+  },
+  {
+   "code": "18",
+   "name": "股"
+  },
+  {
+   "code": "19",
+   "name": "膝"
+  },
+  {
+   "code": "20",
+   "name": "腿"
+  },
+  {
+   "code": "21",
+   "name": "足"
+  },
+  {
+   "code": "22",
+   "name": "內臟"
+  },
+  {
+   "code": "23",
+   "name": "全身"
+  },
+  {
+   "code": "24",
+   "name": "其他"
+  }
+ ]
+}
